@@ -1,0 +1,64 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Daily Log Record</p>
+    <h1 class="page-title"><%= log.intern_name %> • <%= log.date %></h1>
+    <p class="page-subtitle">Recorded work period: <%= log.time_in %> to <%= log.time_out %></p>
+  </div>
+
+  <div class="button-row">
+    <% if (currentUser && (currentUser.role === 'intern' || currentUser.role === 'admin')) { %>
+      <a class="button button-secondary" href="/logs/<%= log.id %>/edit">Edit Log</a>
+    <% } %>
+    <a class="button button-ghost" href="/logs">Back to logs</a>
+  </div>
+</section>
+
+<section class="two-column">
+  <article class="panel">
+    <div class="detail-grid">
+      <div class="detail-card">
+        <span>Status</span>
+        <strong><span class="badge badge-<%= log.status %>"><%= log.status %></span></strong>
+      </div>
+      <div class="detail-card">
+        <span>Hours worked</span>
+        <strong><%= Number(log.hours_worked).toFixed(2) %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Break hours</span>
+        <strong><%= Number(log.break_hours).toFixed(2) %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Supervisor</span>
+        <strong><%= log.supervisor_name || 'Unassigned' %></strong>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Task description</h2>
+        <p class="muted">Main summary captured by the intern for this work day.</p>
+      </div>
+    </div>
+    <p><%= log.task_description %></p>
+    <% if (log.supervisor_comment) { %>
+      <div class="summary-row" style="margin-top: 18px;">
+        <h4>Supervisor comment</h4>
+        <p class="muted"><%= log.supervisor_comment %></p>
+      </div>
+    <% } %>
+  </article>
+</section>
+
+<% if (currentUser && (currentUser.role === 'intern' || currentUser.role === 'admin')) { %>
+  <form action="/logs/<%= log.id %>/delete" method="post" style="margin-top: 22px;">
+    <button class="button button-danger" type="submit">Delete log</button>
+  </form>
+<% } %>
+
+<%- include('../components/app-footer') %>

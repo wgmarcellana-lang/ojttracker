@@ -1,0 +1,108 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Intern Record</p>
+    <h1 class="page-title"><%= intern.name %></h1>
+    <p class="page-subtitle"><%= intern.school %> • <%= intern.course %></p>
+  </div>
+
+  <div class="button-row">
+    <% if (currentUser && currentUser.role === 'admin') { %>
+      <a class="button button-secondary" href="/interns/<%= intern.id %>/edit">Edit Intern</a>
+    <% } %>
+    <a class="button button-primary" href="/reports?internId=<%= intern.id %>">Open Report</a>
+  </div>
+</section>
+
+<section class="two-column">
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Profile summary</h2>
+        <p class="muted">Core internship information tied to this record.</p>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="detail-card">
+        <span>Required hours</span>
+        <strong><%= intern.required_hours %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Approved hours</span>
+        <strong><%= Number(renderedHours).toFixed(1) %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Remaining hours</span>
+        <strong><%= Number(remainingHours).toFixed(1) %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Completion</span>
+        <strong><%= completionPercentage %>%</strong>
+      </div>
+      <div class="detail-card">
+        <span>Start date</span>
+        <strong><%= intern.start_date %></strong>
+      </div>
+      <div class="detail-card">
+        <span>Supervisor</span>
+        <strong><%= intern.supervisor_name || 'Unassigned' %></strong>
+      </div>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Progress meter</h2>
+        <p class="muted">Based only on approved daily logs.</p>
+      </div>
+    </div>
+    <div class="meter-line">
+      <div class="meter-fill" style="width: <%= completionPercentage %>%;"></div>
+    </div>
+    <p class="muted"><%= Number(renderedHours).toFixed(1) %> of <%= intern.required_hours %> required hours completed.</p>
+  </article>
+</section>
+
+<section class="table-panel" style="margin-top: 22px;">
+  <div class="table-header">
+    <div>
+      <h2>Log history</h2>
+      <p class="muted">All submissions associated with this intern.</p>
+    </div>
+  </div>
+
+  <% if (!logs.length) { %>
+    <div class="empty-state">No daily logs are attached to this intern yet.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time Range</th>
+            <th>Hours</th>
+            <th>Status</th>
+            <th>Task</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach((log) => { %>
+            <tr>
+              <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
+              <td><%= log.time_in %> - <%= log.time_out %></td>
+              <td><%= Number(log.hours_worked).toFixed(2) %></td>
+              <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+              <td><%= log.task_description %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../components/app-footer') %>

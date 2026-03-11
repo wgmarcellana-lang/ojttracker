@@ -1,0 +1,77 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Daily Log Form</p>
+    <h1 class="page-title"><%= mode === 'edit' ? 'Update daily log' : 'Add daily log' %></h1>
+    <p class="page-subtitle">Hours are computed automatically from time in, time out, and break deduction.</p>
+  </div>
+</section>
+
+<section class="panel form-card">
+  <% if (errors && errors.length) { %>
+    <ul class="error-list">
+      <% errors.forEach((error) => { %>
+        <li><%= error %></li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+  <form action="<%= mode === 'edit' ? '/logs/' + log.id + '/update' : '/logs' %>" method="post" class="form-grid">
+    <div class="field">
+      <label for="intern_id">Intern</label>
+      <select class="select" id="intern_id" name="intern_id" <%= currentUser && currentUser.role === 'intern' ? 'disabled' : '' %>>
+        <% interns.forEach((intern) => { %>
+          <option value="<%= intern.id %>" <%= String(formData.intern_id) === String(intern.id) ? 'selected' : '' %>>
+            <%= intern.name %>
+          </option>
+        <% }) %>
+      </select>
+      <% if (currentUser && currentUser.role === 'intern') { %>
+        <input type="hidden" name="intern_id" value="<%= formData.intern_id %>">
+      <% } %>
+    </div>
+
+    <div class="field">
+      <label for="date">Work date</label>
+      <input class="input" id="date" name="date" type="date" value="<%= formData.date %>">
+    </div>
+
+    <div class="field">
+      <label for="time_in">Time in</label>
+      <input class="input" id="time_in" name="time_in" type="time" value="<%= formData.time_in %>">
+    </div>
+
+    <div class="field">
+      <label for="time_out">Time out</label>
+      <input class="input" id="time_out" name="time_out" type="time" value="<%= formData.time_out %>">
+    </div>
+
+    <div class="field">
+      <label for="break_hours">Break hours</label>
+      <input class="input" id="break_hours" name="break_hours" type="number" step="0.25" min="0" value="<%= formData.break_hours %>">
+    </div>
+
+    <div class="field field-full">
+      <label for="task_description">Task description</label>
+      <textarea class="textarea" id="task_description" name="task_description"><%= formData.task_description %></textarea>
+      <p class="helper-text">Write this like a short work journal entry describing what you did for the day.</p>
+    </div>
+
+    <div class="field field-full">
+      <div class="button-row">
+        <button class="button button-primary" type="submit"><%= mode === 'edit' ? 'Save log changes' : 'Create log' %></button>
+        <a class="button button-ghost" href="/logs">Back to logs</a>
+      </div>
+    </div>
+  </form>
+
+  <% if (mode === 'edit') { %>
+    <form action="/logs/<%= log.id %>/delete" method="post" style="margin-top: 16px;">
+      <button class="button button-danger" type="submit">Delete log</button>
+    </form>
+  <% } %>
+</section>
+
+<%- include('../components/app-footer') %>

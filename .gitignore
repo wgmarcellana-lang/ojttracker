@@ -1,0 +1,20 @@
+node_modules/
+
+# Local environment secrets
+config/.env
+.env
+.env.*
+!.env.example
+
+# Local database artifacts
+data/sqlite/*.db
+data/sqlite/*.sqlite
+data/sqlite/*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,51 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Admin Records</p>
+    <h1 class="page-title">Manage interns</h1>
+    <p class="page-subtitle">Create or inspect internship records from the directory below.</p>
+  </div>
+
+  <div class="button-row">
+    <a class="button button-primary" href="/interns/new">Add intern</a>
+    <a class="button button-ghost" href="/admin/dashboard">Admin home</a>
+  </div>
+</section>
+
+<section class="table-panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>School</th>
+          <th>Course</th>
+          <th>Supervisor</th>
+          <th>Required Hours</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% interns.forEach((intern) => { %>
+          <tr>
+            <td><strong><%= intern.name %></strong></td>
+            <td><%= intern.username || 'No account' %></td>
+            <td><%= intern.school %></td>
+            <td><%= intern.course %></td>
+            <td><%= intern.supervisor_name || 'Unassigned' %></td>
+            <td><%= intern.required_hours %></td>
+            <td class="action-cell">
+              <a class="button button-ghost" href="/interns/<%= intern.id %>">View</a>
+              <a class="button button-secondary" href="/interns/<%= intern.id %>/edit">Edit</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../components/app-footer') %>

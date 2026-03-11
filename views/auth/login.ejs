@@ -1,0 +1,53 @@
+<%- include('../components/header', { pageTitle, bodyClass: 'login-page' }) %>
+
+<section class="split-layout">
+  <div class="login-showcase">
+    <div class="login-brand">
+      <a class="brand" href="/">
+        <span class="brand-mark">OJ</span>
+        <span class="brand-copy">
+          <strong>OJT Tracker</strong>
+        </span>
+      </a>
+    </div>
+
+    <p class="eyebrow">Hours Visibility</p>
+    <h1 class="hero-title">Track the internship journey with one clean approval flow.</h1>
+    <p class="hero-copy" style="color: white;">
+      Daily logs, supervisor review, and completion reports live in the same workspace so progress is visible
+      without extra task management screens or spreadsheets.
+    </p>
+  </div>
+
+  <div class="login-card-wrap">
+    <div class="login-card">
+      <p class="eyebrow">Welcome Back</p>
+      <h2 class="page-title" style="font-size: 2.4rem;">Sign in to the tracker</h2>
+      <p class="page-subtitle">Sign in to continue.</p>
+
+      <% if (errors && errors.length) { %>
+        <ul class="error-list">
+          <% errors.forEach((error) => { %>
+            <li><%= error %></li>
+          <% }) %>
+        </ul>
+      <% } %>
+
+      <form action="/auth/login" method="post" class="stack">
+        <div class="field">
+          <label for="username">Username</label>
+          <input class="input" id="username" name="username" type="text" value="<%= formData.username || '' %>" placeholder="Enter username">
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password" value="<%= formData.password || '' %>" placeholder="Enter password">
+        </div>
+
+        <button class="button button-primary button-block" type="submit">Sign In</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<%- include('../components/footer') %>

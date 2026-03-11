@@ -1,0 +1,99 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Admin Control</p>
+    <h1 class="page-title">Operations dashboard</h1>
+    <p class="page-subtitle">Snapshot of interns, supervisors, logs, and pending review load.</p>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-tone tone-primary">IN</span>
+    <h3><%= stats.interns %></h3>
+    <p>Intern records</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-dark">SP</span>
+    <h3><%= stats.supervisors %></h3>
+    <p>Supervisors</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-success">LG</span>
+    <h3><%= stats.logs %></h3>
+    <p>Total logs</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-warning">PD</span>
+    <h3><%= stats.pendingLogs %></h3>
+    <p>Pending approvals</p>
+  </article>
+</section>
+
+<section class="two-column">
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Quick links</h2>
+        <p class="muted">Common administrative actions.</p>
+      </div>
+    </div>
+    <div class="button-row">
+      <a class="button button-primary" href="/interns/new">Add intern</a>
+      <a class="button button-secondary" href="/admin/supervisors">Manage supervisors</a>
+      <a class="button button-ghost" href="/reports">Open reports</a>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>System overview</h2>
+        <p class="muted">Summary of the main functions currently available in the system.</p>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card"><span>Intern records</span><strong>Available</strong></div>
+      <div class="detail-card"><span>Daily logs</span><strong>Available</strong></div>
+      <div class="detail-card"><span>Supervisor review</span><strong>Available</strong></div>
+      <div class="detail-card"><span>Reports</span><strong>Available</strong></div>
+    </div>
+  </article>
+</section>
+
+<section class="table-panel" style="margin-top: 22px;">
+  <div class="table-header">
+    <div>
+      <h2>Recent log activity</h2>
+      <p class="muted">Most recent log entries across the system.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Intern</th>
+          <th>Hours</th>
+          <th>Status</th>
+          <th>Supervisor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recentLogs.forEach((log) => { %>
+          <tr>
+            <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
+            <td><%= log.intern_name %></td>
+            <td><%= Number(log.hours_worked).toFixed(2) %></td>
+            <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+            <td><%= log.supervisor_name || 'Unassigned' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../components/app-footer') %>

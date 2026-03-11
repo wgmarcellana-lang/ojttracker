@@ -1,0 +1,56 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Supervisor Queue</p>
+    <h1 class="page-title">Review submitted logs</h1>
+    <p class="page-subtitle">Approve only the entries that should count toward required internship hours.</p>
+  </div>
+</section>
+
+<section class="table-panel">
+  <% if (!logs.length) { %>
+    <div class="empty-state">No logs available for review.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Intern</th>
+            <th>Hours</th>
+            <th>Status</th>
+            <th>Task</th>
+            <th>Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach((log) => { %>
+            <tr>
+              <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
+              <td><%= log.intern_name %></td>
+              <td><%= Number(log.hours_worked).toFixed(2) %></td>
+              <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+              <td><%= log.task_description %></td>
+              <td>
+                <div class="stack">
+                  <form action="/supervisors/logs/<%= log.id %>/approve" method="post" class="stack">
+                    <textarea class="textarea" name="supervisor_comment" placeholder="Optional approval note"></textarea>
+                    <button class="button button-primary" type="submit">Approve</button>
+                  </form>
+                  <form action="/supervisors/logs/<%= log.id %>/reject" method="post" class="stack">
+                    <textarea class="textarea" name="supervisor_comment" placeholder="Reason for rejection"></textarea>
+                    <button class="button button-danger" type="submit">Reject</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../components/app-footer') %>

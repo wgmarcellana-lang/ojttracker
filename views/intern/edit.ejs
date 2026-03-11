@@ -1,0 +1,84 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Admin Form</p>
+    <h1 class="page-title"><%= mode === 'edit' ? 'Edit intern' : 'Add intern' %></h1>
+    <p class="page-subtitle">Use the fields below to maintain internship records, supervisor assignments, and login credentials.</p>
+  </div>
+</section>
+
+<section class="panel form-card">
+  <% if (errors && errors.length) { %>
+    <ul class="error-list">
+      <% errors.forEach((error) => { %>
+        <li><%= error %></li>
+      <% }) %>
+    </ul>
+  <% } %>
+
+  <form action="<%= mode === 'edit' ? '/interns/' + intern.id + '/update' : '/interns' %>" method="post" class="form-grid">
+    <div class="field">
+      <label for="name">Intern name</label>
+      <input class="input" id="name" name="name" type="text" value="<%= formData.name %>">
+    </div>
+
+    <div class="field">
+      <label for="school">School</label>
+      <input class="input" id="school" name="school" type="text" value="<%= formData.school %>">
+    </div>
+
+    <div class="field">
+      <label for="course">Course</label>
+      <input class="input" id="course" name="course" type="text" value="<%= formData.course %>">
+    </div>
+
+    <div class="field">
+      <label for="required_hours">Required hours</label>
+      <input class="input" id="required_hours" name="required_hours" type="number" min="1" value="<%= formData.required_hours %>">
+    </div>
+
+    <div class="field">
+      <label for="start_date">Start date</label>
+      <input class="input" id="start_date" name="start_date" type="date" value="<%= formData.start_date %>">
+    </div>
+
+    <div class="field">
+      <label for="supervisor_id">Assigned supervisor</label>
+      <select class="select" id="supervisor_id" name="supervisor_id">
+        <option value="">Select supervisor</option>
+        <% supervisors.forEach((supervisor) => { %>
+          <option value="<%= supervisor.id %>" <%= String(formData.supervisor_id) === String(supervisor.id) ? 'selected' : '' %>>
+            <%= supervisor.name %> - <%= supervisor.department %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input class="input" id="username" name="username" type="text" value="<%= formData.username %>">
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input class="input" id="password" name="password" type="text" value="<%= formData.password %>">
+    </div>
+
+    <div class="field field-full">
+      <div class="button-row">
+        <button class="button button-primary" type="submit"><%= mode === 'edit' ? 'Save changes' : 'Create intern' %></button>
+        <a class="button button-ghost" href="/interns">Back to interns</a>
+      </div>
+    </div>
+  </form>
+
+  <% if (mode === 'edit') { %>
+    <form action="/interns/<%= intern.id %>/delete" method="post" style="margin-top: 16px;">
+      <button class="button button-danger" type="submit">Delete intern</button>
+    </form>
+  <% } %>
+</section>
+
+<%- include('../components/app-footer') %>

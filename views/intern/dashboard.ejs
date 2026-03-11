@@ -1,0 +1,129 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Intern Workspace</p>
+    <h1 class="page-title"><%= intern.name %></h1>
+    <p class="page-subtitle">Progress against <%= intern.required_hours %> required internship hours.</p>
+  </div>
+
+  <div class="button-row">
+    <a class="button button-primary" href="/logs/new">Add Daily Log</a>
+    <a class="button button-ghost" href="/interns/<%= intern.id %>">Open Profile</a>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-tone tone-primary">AP</span>
+    <h3><%= Number(renderedHours).toFixed(1) %></h3>
+    <p>Approved hours</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-warning">RM</span>
+    <h3><%= Number(remainingHours).toFixed(1) %></h3>
+    <p>Remaining hours</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-dark">TL</span>
+    <h3><%= Number(totalHours).toFixed(1) %></h3>
+    <p>Total logged hours</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-success">PD</span>
+    <h3><%= pendingCount %></h3>
+    <p>Pending submissions</p>
+  </article>
+</section>
+
+<section class="content-grid">
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Target progress</h2>
+        <p class="muted">Approved logs are the only entries counted here.</p>
+      </div>
+    </div>
+
+    <div class="metric-ring" style="--progress:<%= completionPercentage %>;">
+      <div class="metric-ring-inner">
+        <strong><%= completionPercentage %>%</strong>
+        <span class="muted">Complete</span>
+      </div>
+    </div>
+
+    <div class="meta-row">
+      <span>Required: <strong><%= intern.required_hours %> hrs</strong></span>
+      <span>Supervisor: <strong><%= intern.supervisor_name || 'Unassigned' %></strong></span>
+    </div>
+  </article>
+
+  <article class="timeline-card">
+    <div class="panel-header">
+      <div>
+        <h2>Recent activity</h2>
+        <p class="muted">Most recent submissions and their current review status.</p>
+      </div>
+    </div>
+
+    <% if (!recentLogs.length) { %>
+      <div class="empty-state">No log entries yet. Start with your first daily log.</div>
+    <% } else { %>
+      <div class="list-stack">
+        <% recentLogs.forEach((log) => { %>
+          <div class="timeline-item">
+            <div class="panel-header">
+              <div>
+                <h4><a href="/logs/<%= log.id %>"><%= log.date %></a></h4>
+                <div class="meta-row">
+                  <span><%= log.time_in %> - <%= log.time_out %></span>
+                  <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
+                </div>
+              </div>
+              <span class="badge badge-<%= log.status %>"><%= log.status %></span>
+            </div>
+            <p class="muted"><%= log.task_description %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </article>
+</section>
+
+<section class="table-panel" style="margin-top: 22px;">
+  <div class="table-header">
+    <div>
+      <h2>Weekly summary</h2>
+      <p class="muted">Approved hours grouped by week start.</p>
+    </div>
+    <a class="button button-secondary" href="/reports?internId=<%= intern.id %>">Open report</a>
+  </div>
+
+  <% if (!weeklySummary.length) { %>
+    <div class="empty-state">No approved hours yet, so the weekly summary is still empty.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Week Start</th>
+            <th>Approved Hours</th>
+            <th>Logs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% weeklySummary.forEach((week) => { %>
+            <tr>
+              <td><%= week.weekStart %></td>
+              <td><%= Number(week.hours).toFixed(2) %></td>
+              <td><%= week.approvedLogs %> approved of <%= week.totalLogs %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../components/app-footer') %>

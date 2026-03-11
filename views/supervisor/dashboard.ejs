@@ -1,0 +1,95 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Supervisor Workspace</p>
+    <h1 class="page-title"><%= supervisor.name %></h1>
+    <p class="page-subtitle"><%= supervisor.department %> • <%= supervisor.email %></p>
+  </div>
+
+  <div class="button-row">
+    <a class="button button-primary" href="/supervisors/review-logs">Review pending logs</a>
+    <a class="button button-ghost" href="/reports">Open reports</a>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-tone tone-primary">IN</span>
+    <h3><%= interns.length %></h3>
+    <p>Assigned interns</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-warning">PD</span>
+    <h3><%= stats.pending %></h3>
+    <p>Pending approvals</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-success">AP</span>
+    <h3><%= stats.approved %></h3>
+    <p>Approved logs</p>
+  </article>
+  <article class="stat-card">
+    <span class="stat-tone tone-dark">RJ</span>
+    <h3><%= stats.rejected %></h3>
+    <p>Rejected logs</p>
+  </article>
+</section>
+
+<section class="two-column">
+  <article class="timeline-card">
+    <div class="panel-header">
+      <div>
+        <h2>Pending reviews</h2>
+        <p class="muted">Logs that still need supervisor action.</p>
+      </div>
+    </div>
+
+    <% if (!pendingLogs.length) { %>
+      <div class="empty-state">No pending logs right now.</div>
+    <% } else { %>
+      <div class="list-stack">
+        <% pendingLogs.forEach((log) => { %>
+          <div class="timeline-item">
+            <div class="panel-header">
+              <div>
+                <h4><%= log.intern_name %> • <%= log.date %></h4>
+                <div class="meta-row">
+                  <span><%= log.time_in %> - <%= log.time_out %></span>
+                  <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
+                </div>
+              </div>
+              <span class="badge badge-pending">pending</span>
+            </div>
+            <p class="muted"><%= log.task_description %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </article>
+
+  <article class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>Assigned interns</h2>
+        <p class="muted">Current roster reporting to this supervisor.</p>
+      </div>
+    </div>
+
+    <div class="list-stack">
+      <% interns.forEach((intern) => { %>
+        <div class="summary-row">
+          <h4><%= intern.name %></h4>
+          <div class="meta-row">
+            <span><%= intern.school %></span>
+            <span><%= intern.course %></span>
+            <span>Required: <%= intern.required_hours %> hrs</span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </article>
+</section>
+
+<%- include('../components/app-footer') %>

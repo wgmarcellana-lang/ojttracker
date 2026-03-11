@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle %></title>
+</head>
+<body>
+  <%- include('../components/navbar') %>
+  <main>
+    <h1><%= pageTitle %></h1>
+    <form action="/logs" method="post">
+      <label for="date">Date</label>
+      <input id="date" name="date" type="date" />
+
+      <label for="time_in">Time In</label>
+      <input id="time_in" name="time_in" type="time" />
+
+      <label for="time_out">Time Out</label>
+      <input id="time_out" name="time_out" type="time" />
+
+      <label for="task_description">Task Description</label>
+      <textarea id="task_description" name="task_description"></textarea>
+
+      <button type="submit">Save Log</button>
+    </form>
+  </main>
+  <%- include('../components/footer') %>
+</body>
+</html>

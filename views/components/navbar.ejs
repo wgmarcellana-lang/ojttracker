@@ -1,0 +1,79 @@
+<%
+  const user = currentUser || null;
+  const role = user ? user.role : null;
+  let navItems = [];
+
+  if (role === 'intern') {
+    navItems = [
+      { href: '/interns/dashboard', label: 'Dashboard', short: 'DB' },
+      { href: '/logs', label: 'My Logs', short: 'LG' },
+      { href: '/logs/new', label: 'Add Log', short: 'AD' },
+      { href: '/reports', label: 'Reports', short: 'RP' }
+    ];
+  } else if (role === 'supervisor') {
+    navItems = [
+      { href: '/supervisors/dashboard', label: 'Dashboard', short: 'DB' },
+      { href: '/supervisors/review-logs', label: 'Review Logs', short: 'RV' },
+      { href: '/logs', label: 'All Logs', short: 'LG' },
+      { href: '/reports', label: 'Reports', short: 'RP' }
+    ];
+  } else if (role === 'admin') {
+    navItems = [
+      { href: '/admin/dashboard', label: 'Dashboard', short: 'DB' },
+      { href: '/interns', label: 'Interns', short: 'IN' },
+      { href: '/admin/supervisors', label: 'Supervisors', short: 'SP' },
+      { href: '/logs', label: 'Logs', short: 'LG' },
+      { href: '/reports', label: 'Reports', short: 'RP' }
+    ];
+  }
+
+  const pathValue = currentPath || '';
+  const isActiveLink = (href) => pathValue === href || (href !== '/' && pathValue.indexOf(href + '/') === 0);
+%>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">OJ</span>
+      <span class="brand-copy">
+        <strong>OJT Tracker</strong>
+      </span>
+    </a>
+
+    <nav class="nav-stack">
+      <% navItems.forEach((item) => { %>
+        <a href="<%= item.href %>" class="nav-link <%= isActiveLink(item.href) ? 'is-active' : '' %>">
+          <span class="nav-icon"><%= item.short %></span>
+          <span><%= item.label %></span>
+        </a>
+      <% }) %>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="profile-chip">
+        <span class="profile-avatar">
+          <%= user && user.profile && user.profile.name ? user.profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() : 'OJ' %>
+        </span>
+        <div>
+          <strong><%= user && user.profile ? user.profile.name : 'Guest' %></strong>
+          <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Visitor' %></small>
+        </div>
+      </div>
+
+      <form action="/auth/logout" method="post">
+        <button class="button button-ghost button-block" type="submit">Sign out</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="content-shell">
+    <header class="mobile-bar">
+      <a class="brand brand-inline" href="/">
+        <span class="brand-mark">OJ</span>
+        <span class="brand-copy">
+          <strong>OJT Tracker</strong>
+          <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : '' %></small>
+        </span>
+      </a>
+    </header>
+
+    <main class="page-shell">

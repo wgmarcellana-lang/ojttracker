@@ -1,0 +1,105 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Admin Records</p>
+    <h1 class="page-title">Manage supervisors</h1>
+    <p class="page-subtitle">Create or update supervisor entries used by intern assignments, review queues, and login access.</p>
+  </div>
+</section>
+
+<section class="two-column">
+  <article class="panel form-card">
+    <div class="panel-header">
+      <div>
+        <h2><%= mode === 'edit' ? 'Edit supervisor' : 'Add supervisor' %></h2>
+        <p class="muted">Use this form to maintain supervisor records and account credentials.</p>
+      </div>
+    </div>
+
+    <% if (errors && errors.length) { %>
+      <ul class="error-list">
+        <% errors.forEach((error) => { %>
+          <li><%= error %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <form action="<%= mode === 'edit' ? '/admin/supervisors/' + supervisor.id + '/update' : '/admin/supervisors' %>" method="post" class="form-grid">
+      <div class="field">
+        <label for="name">Name</label>
+        <input class="input" id="name" name="name" type="text" value="<%= formData.name %>">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" value="<%= formData.email %>">
+      </div>
+      <div class="field field-full">
+        <label for="department">Department</label>
+        <input class="input" id="department" name="department" type="text" value="<%= formData.department %>">
+      </div>
+      <div class="field">
+        <label for="username">Username</label>
+        <input class="input" id="username" name="username" type="text" value="<%= formData.username %>">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input class="input" id="password" name="password" type="text" value="<%= formData.password %>">
+      </div>
+      <div class="field field-full">
+        <div class="button-row">
+          <button class="button button-primary" type="submit"><%= mode === 'edit' ? 'Save supervisor' : 'Create supervisor' %></button>
+          <% if (mode === 'edit') { %>
+            <a class="button button-ghost" href="/admin/supervisors">Cancel edit</a>
+          <% } %>
+        </div>
+      </div>
+    </form>
+
+    <% if (mode === 'edit') { %>
+      <form action="/admin/supervisors/<%= supervisor.id %>/delete" method="post" style="margin-top: 16px;">
+        <button class="button button-danger" type="submit">Delete supervisor</button>
+      </form>
+    <% } %>
+  </article>
+
+  <article class="table-panel">
+    <div class="table-header">
+      <div>
+        <h2>Supervisor list</h2>
+        <p class="muted">Intern counts update automatically from current assignments.</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Interns</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% supervisors.forEach((item) => { %>
+            <tr>
+              <td><strong><%= item.name %></strong></td>
+              <td><%= item.username || 'No account' %></td>
+              <td><%= item.email %></td>
+              <td><%= item.department %></td>
+              <td><%= item.intern_count %></td>
+              <td class="action-cell">
+                <a class="button button-secondary" href="/admin/supervisors/<%= item.id %>/edit">Edit</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<%- include('../components/app-footer') %>

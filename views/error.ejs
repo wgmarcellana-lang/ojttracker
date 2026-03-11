@@ -1,0 +1,20 @@
+<%- include('components/header', { pageTitle: pageTitle || 'Application Error' }) %>
+
+<section class="page-shell">
+  <div class="panel center-note">
+    <p class="eyebrow">Application Error</p>
+    <h1 class="page-title"><%= message %></h1>
+    <% if (error && error.status) { %>
+      <p class="page-subtitle">Status code: <%= error.status %></p>
+    <% } %>
+    <% if (error && error.stack) { %>
+      <pre style="white-space: pre-wrap; color: var(--muted);"><%= error.stack %></pre>
+    <% } %>
+    <div class="button-row">
+      <a class="button button-primary" href="/">Return home</a>
+      <a class="button button-ghost" href="/auth/login">Go to login</a>
+    </div>
+  </div>
+</section>
+
+<%- include('components/footer') %>

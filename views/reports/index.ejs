@@ -1,0 +1,117 @@
+<%- include('../components/header', { pageTitle }) %>
+<%- include('../components/navbar') %>
+
+<section class="page-hero">
+  <div>
+    <p class="eyebrow">Reports</p>
+    <h1 class="page-title">Completion and weekly summary</h1>
+    <p class="page-subtitle">View progress summaries and export the current report.</p>
+  </div>
+</section>
+
+<section class="panel form-card">
+  <form action="/reports" method="get" class="form-grid">
+    <div class="field">
+      <label for="internId">Select intern</label>
+      <select class="select" id="internId" name="internId">
+        <% interns.forEach((intern) => { %>
+          <option value="<%= intern.id %>" <%= Number(selectedInternId) === Number(intern.id) ? 'selected' : '' %>>
+            <%= intern.name %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="field field-full">
+      <div class="button-row">
+        <button class="button button-primary" type="submit">Load report</button>
+        <% if (report) { %>
+          <a class="button button-secondary" href="/reports/export/csv?internId=<%= report.intern.id %>">Export CSV</a>
+        <% } %>
+      </div>
+    </div>
+  </form>
+
+  <% if (pdfMessage) { %>
+    <div class="summary-row" style="margin-top: 18px;">
+      <strong><%= pdfMessage %></strong>
+    </div>
+  <% } %>
+</section>
+
+<% if (report) { %>
+  <section class="stats-grid" style="margin-top: 22px;">
+    <article class="stat-card">
+      <span class="stat-tone tone-primary">AP</span>
+      <h3><%= Number(report.renderedHours).toFixed(1) %></h3>
+      <p>Approved hours</p>
+    </article>
+    <article class="stat-card">
+      <span class="stat-tone tone-warning">RM</span>
+      <h3><%= Number(report.remainingHours).toFixed(1) %></h3>
+      <p>Remaining hours</p>
+    </article>
+    <article class="stat-card">
+      <span class="stat-tone tone-success">CP</span>
+      <h3><%= report.completionPercentage %>%</h3>
+      <p>Completion rate</p>
+    </article>
+    <article class="stat-card">
+      <span class="stat-tone tone-dark">ST</span>
+      <h3><%= report.status %></h3>
+      <p>Current status</p>
+    </article>
+  </section>
+
+  <section class="two-column">
+    <article class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Intern details</h2>
+          <p class="muted">Reference information for the selected intern.</p>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-card"><span>Name</span><strong><%= report.intern.name %></strong></div>
+        <div class="detail-card"><span>School</span><strong><%= report.intern.school %></strong></div>
+        <div class="detail-card"><span>Course</span><strong><%= report.intern.course %></strong></div>
+        <div class="detail-card"><span>Required Hours</span><strong><%= report.intern.required_hours %></strong></div>
+      </div>
+    </article>
+
+    <article class="table-panel">
+      <div class="table-header">
+        <div>
+          <h2>Weekly approved summary</h2>
+          <p class="muted">Summarized by week start date.</p>
+        </div>
+      </div>
+
+      <% if (!report.weeklySummary.length) { %>
+        <div class="empty-state">No approved weekly hours available.</div>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Week Start</th>
+                <th>Hours</th>
+                <th>Approved Logs</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% report.weeklySummary.forEach((week) => { %>
+                <tr>
+                  <td><%= week.weekStart %></td>
+                  <td><%= Number(week.hours).toFixed(2) %></td>
+                  <td><%= week.approvedLogs %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </article>
+  </section>
+<% } %>
+
+<%- include('../components/app-footer') %>
