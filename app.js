@@ -1,8 +1,11 @@
-var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var securityHeaders = require('./middleware/securityHeaders');
+var notFound = require('./middleware/notFound');
+var errorHandler = require('./middleware/errorHandler');
+var { formatTime12Hour } = require('./utilities/timeUtils');
 
 require('dotenv').config({
   path: path.join(__dirname, 'config', '.env')
@@ -24,10 +27,13 @@ var app = express();
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+app.disable('x-powered-by');
+app.locals.formatTime = formatTime12Hour;
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(securityHeaders);
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 app.use(cookieParser());
 app.use(loadCurrentUser);
 app.use(express.static(path.join(__dirname, 'public')));
@@ -41,19 +47,8 @@ app.use('/admin', adminRouter);
 app.use('/reports', reportRouter);
 app.use('/users', usersRouter);
 
-app.use(function(req, res, next) {
-  next(createError(404));
-});
-
-app.use(function(err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  res.status(err.status || 500);
-  res.render('error', {
-    pageTitle: 'Application Error'
-  });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 if (require.main === module) {
   const port = process.env.PORT || 3000;

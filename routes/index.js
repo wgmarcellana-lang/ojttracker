@@ -2,19 +2,35 @@ const express = require('express');
 const router = express.Router();
 
 router.get('/', (req, res) => {
+  let redirectPath = '/auth/login';
+
   if (req.user) {
     if (req.user.role === 'intern') {
-      return res.redirect('/interns/dashboard');
+      redirectPath = '/interns/dashboard';
+    } else if (req.user.role === 'supervisor') {
+      redirectPath = '/supervisors/dashboard';
+    } else {
+      redirectPath = '/admin/dashboard';
     }
-
-    if (req.user.role === 'supervisor') {
-      return res.redirect('/supervisors/dashboard');
-    }
-
-    return res.redirect('/admin/dashboard');
   }
 
-  return res.redirect('/auth/login');
+  return res
+    .status(200)
+    .type('html')
+    .send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting</title>
+</head>
+<body>
+  <p>Redirecting...</p>
+  <script>
+    window.location.replace(${JSON.stringify(redirectPath)});
+  </script>
+</body>
+</html>`);
 });
 
 module.exports = router;

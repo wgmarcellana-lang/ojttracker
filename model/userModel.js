@@ -1,9 +1,19 @@
 const { all, get, run } = require('../config/database');
+const { hashPassword, isPasswordHash } = require('../utilities/passwordUtils');
 
 exports.tableName = 'users';
 
-exports.getAll = () => all(`
-  SELECT u.*,
+const userColumns = `
+  u.id,
+  u.username,
+  u.password,
+  u.role,
+  u.intern_id,
+  u.supervisor_id
+`;
+
+exports.getAll = async () => all(`
+  SELECT ${userColumns},
          i.name AS intern_name,
          s.name AS supervisor_name
   FROM users u
@@ -12,42 +22,62 @@ exports.getAll = () => all(`
   ORDER BY u.username ASC
 `);
 
-exports.getById = (id) => get(`
-  SELECT *
+exports.getById = async (id) => get(`
+  SELECT id,
+         username,
+         password,
+         role,
+         intern_id,
+         supervisor_id
   FROM users
   WHERE id = :id
 `, { id: Number(id) });
 
-exports.getByUsername = (username) => get(`
-  SELECT *
+exports.getByUsername = async (username) => get(`
+  SELECT id,
+         username,
+         password,
+         role,
+         intern_id,
+         supervisor_id
   FROM users
   WHERE lower(username) = lower(:username)
 `, { username });
 
-exports.getByInternId = (internId) => get(`
-  SELECT *
+exports.getByInternId = async (internId) => get(`
+  SELECT id,
+         username,
+         password,
+         role,
+         intern_id,
+         supervisor_id
   FROM users
   WHERE intern_id = :internId
 `, { internId: Number(internId) });
 
-exports.getBySupervisorId = (supervisorId) => get(`
-  SELECT *
+exports.getBySupervisorId = async (supervisorId) => get(`
+  SELECT id,
+         username,
+         password,
+         role,
+         intern_id,
+         supervisor_id
   FROM users
   WHERE supervisor_id = :supervisorId
 `, { supervisorId: Number(supervisorId) });
 
-exports.create = (payload) => run(`
+exports.create = async (payload) => run(`
   INSERT INTO users (username, password, role, intern_id, supervisor_id)
   VALUES (:username, :password, :role, :intern_id, :supervisor_id)
 `, {
   username: String(payload.username).trim().toLowerCase(),
-  password: payload.password,
+  password: isPasswordHash(payload.password) ? payload.password : await hashPassword(payload.password),
   role: payload.role,
   intern_id: payload.intern_id ? Number(payload.intern_id) : null,
   supervisor_id: payload.supervisor_id ? Number(payload.supervisor_id) : null
 });
 
-exports.update = (id, payload) => run(`
+exports.update = async (id, payload) => run(`
   UPDATE users
   SET username = :username,
       password = :password,
@@ -58,16 +88,25 @@ exports.update = (id, payload) => run(`
 `, {
   id: Number(id),
   username: String(payload.username).trim().toLowerCase(),
-  password: payload.password,
+  password: isPasswordHash(payload.password) ? payload.password : await hashPassword(payload.password),
   role: payload.role,
   intern_id: payload.intern_id ? Number(payload.intern_id) : null,
   supervisor_id: payload.supervisor_id ? Number(payload.supervisor_id) : null
 });
 
-exports.deleteByInternId = (internId) => run(`
+exports.updatePassword = async (id, password) => run(`
+  UPDATE users
+  SET password = :password
+  WHERE id = :id
+`, {
+  id: Number(id),
+  password: isPasswordHash(password) ? password : await hashPassword(password)
+});
+
+exports.deleteByInternId = async (internId) => run(`
   DELETE FROM users WHERE intern_id = :internId
 `, { internId: Number(internId) });
 
-exports.deleteBySupervisorId = (supervisorId) => run(`
+exports.deleteBySupervisorId = async (supervisorId) => run(`
   DELETE FROM users WHERE supervisor_id = :supervisorId
 `, { supervisorId: Number(supervisorId) });

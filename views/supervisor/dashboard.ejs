@@ -56,7 +56,7 @@
               <div>
                 <h4><%= log.intern_name %> • <%= log.date %></h4>
                 <div class="meta-row">
-                  <span><%= log.time_in %> - <%= log.time_out %></span>
+                  <span><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></span>
                   <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
                 </div>
               </div>

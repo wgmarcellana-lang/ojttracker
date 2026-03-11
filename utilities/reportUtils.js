@@ -5,6 +5,7 @@ const {
   calculateRemainingHours,
   sumHours
 } = require('./hoursUtils');
+const { formatTime12Hour } = require('./timeUtils');
 
 const buildCompletionReport = (intern = {}, logs = []) => {
   const approvedLogs = logs.filter((log) => log.status === 'approved');
@@ -52,8 +53,8 @@ const buildCsv = (intern = {}, logs = []) => {
     intern.school,
     intern.course,
     log.date,
-    log.time_in,
-    log.time_out,
+    formatTime12Hour(log.time_in),
+    formatTime12Hour(log.time_out),
     log.break_hours,
     log.hours_worked,
     log.status,

@@ -33,15 +33,21 @@
               <td><%= Number(log.hours_worked).toFixed(2) %></td>
               <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
               <td><%= log.task_description %></td>
-              <td>
-                <div class="stack">
-                  <form action="/supervisors/logs/<%= log.id %>/approve" method="post" class="stack">
-                    <textarea class="textarea" name="supervisor_comment" placeholder="Optional approval note"></textarea>
-                    <button class="button button-primary" type="submit">Approve</button>
+              <td class="review-cell">
+                <div class="review-actions">
+                  <form data-api-form data-api-action="/supervisors/logs/<%= log.id %>/approve" data-success-redirect="/supervisors/review-logs" class="review-action-form">
+                    <ul class="error-list" data-form-errors hidden></ul>
+                    <div class="review-inline-group">
+                      <input class="input review-note-input" name="supervisor_comment" placeholder="Optional note">
+                      <button class="button button-primary" type="submit">Approve</button>
+                    </div>
                   </form>
-                  <form action="/supervisors/logs/<%= log.id %>/reject" method="post" class="stack">
-                    <textarea class="textarea" name="supervisor_comment" placeholder="Reason for rejection"></textarea>
-                    <button class="button button-danger" type="submit">Reject</button>
+                  <form data-api-form data-api-action="/supervisors/logs/<%= log.id %>/reject" data-success-redirect="/supervisors/review-logs" class="review-action-form">
+                    <ul class="error-list" data-form-errors hidden></ul>
+                    <div class="review-inline-group">
+                      <input class="input review-note-input" name="supervisor_comment" placeholder="Reason for rejection">
+                      <button class="button button-danger" type="submit">Reject</button>
+                    </div>
                   </form>
                 </div>
               </td>

@@ -1,4 +1,4 @@
-const getLoginValidationErrors = (payload = {}) => {
+const getLoginValidationErrors = async (payload = {}) => {
   const errors = [];
 
   if (!payload.username || !String(payload.username).trim()) {
@@ -14,7 +14,13 @@ const getLoginValidationErrors = (payload = {}) => {
 
 exports.getLoginValidationErrors = getLoginValidationErrors;
 
-exports.validateLogin = (req, res, next) => {
-  req.validationErrors = getLoginValidationErrors(req.body);
-  next();
-};
+async function validateLogin(req, res, next) {
+  try {
+    req.validationErrors = await getLoginValidationErrors(req.body);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+exports.validateLogin = validateLogin;

@@ -2,8 +2,18 @@ const { all, get, run } = require('../config/database');
 
 exports.tableName = 'interns';
 
-exports.getAll = () => all(`
-  SELECT i.*,
+const internColumns = `
+  i.id,
+  i.name,
+  i.school,
+  i.course,
+  i.required_hours,
+  i.start_date,
+  i.supervisor_id
+`;
+
+exports.getAll = async () => all(`
+  SELECT ${internColumns},
          s.name AS supervisor_name,
          s.email AS supervisor_email,
          u.username,
@@ -20,8 +30,8 @@ exports.getAll = () => all(`
   ORDER BY i.name ASC
 `);
 
-exports.getById = (id) => get(`
-  SELECT i.*,
+exports.getById = async (id) => get(`
+  SELECT ${internColumns},
          s.name AS supervisor_name,
          s.email AS supervisor_email,
          s.department AS supervisor_department,
@@ -32,31 +42,31 @@ exports.getById = (id) => get(`
   WHERE i.id = :id
 `, { id: Number(id) });
 
-exports.getWithSupervisor = (id) => exports.getById(id);
+exports.getWithSupervisor = async (id) => exports.getById(id);
 
-exports.getDashboardSummary = (id) => {
-  const intern = exports.getById(id);
+exports.getDashboardSummary = async (id) => {
+  const intern = await exports.getById(id);
   if (!intern) {
     return null;
   }
 
-  const approvedHoursRow = get(`
-    SELECT ROUND(COALESCE(SUM(hours_worked), 0), 2) AS approved_hours
-    FROM daily_logs
-    WHERE intern_id = :id AND status = 'approved'
-  `, { id: Number(id) });
-
-  const totalHoursRow = get(`
-    SELECT ROUND(COALESCE(SUM(hours_worked), 0), 2) AS total_hours
-    FROM daily_logs
-    WHERE intern_id = :id
-  `, { id: Number(id) });
-
-  const pendingLogsRow = get(`
-    SELECT COUNT(*) AS pending_count
-    FROM daily_logs
-    WHERE intern_id = :id AND status = 'pending'
-  `, { id: Number(id) });
+  const [approvedHoursRow, totalHoursRow, pendingLogsRow] = await Promise.all([
+    get(`
+      SELECT ROUND(COALESCE(SUM(hours_worked), 0), 2) AS approved_hours
+      FROM daily_logs
+      WHERE intern_id = :id AND status = 'approved'
+    `, { id: Number(id) }),
+    get(`
+      SELECT ROUND(COALESCE(SUM(hours_worked), 0), 2) AS total_hours
+      FROM daily_logs
+      WHERE intern_id = :id
+    `, { id: Number(id) }),
+    get(`
+      SELECT COUNT(*) AS pending_count
+      FROM daily_logs
+      WHERE intern_id = :id AND status = 'pending'
+    `, { id: Number(id) })
+  ]);
 
   return {
     intern,
@@ -66,7 +76,7 @@ exports.getDashboardSummary = (id) => {
   };
 };
 
-exports.create = (payload) => run(`
+exports.create = async (payload) => run(`
   INSERT INTO interns (
     name,
     school,
@@ -92,7 +102,7 @@ exports.create = (payload) => run(`
   supervisor_id: payload.supervisor_id ? Number(payload.supervisor_id) : null
 });
 
-exports.update = (id, payload) => run(`
+exports.update = async (id, payload) => run(`
   UPDATE interns
   SET name = :name,
       school = :school,
@@ -111,6 +121,6 @@ exports.update = (id, payload) => run(`
   supervisor_id: payload.supervisor_id ? Number(payload.supervisor_id) : null
 });
 
-exports.delete = (id) => run(`
+exports.delete = async (id) => run(`
   DELETE FROM interns WHERE id = :id
 `, { id: Number(id) });

@@ -11,6 +11,18 @@ const parseTimeToMinutes = (timeValue) => {
   return (hours * MINUTES_PER_HOUR) + minutes;
 };
 
+const formatTime12Hour = (timeValue) => {
+  if (!timeValue || !/^\d{2}:\d{2}$/.test(timeValue)) {
+    return timeValue || '';
+  }
+
+  const [hourValue, minuteValue] = timeValue.split(':').map(Number);
+  const meridiem = hourValue >= 12 ? 'pm' : 'am';
+  const normalizedHour = hourValue % 12 || 12;
+
+  return `${String(normalizedHour).padStart(2, '0')}:${String(minuteValue).padStart(2, '0')} ${meridiem}`;
+};
+
 const calculateWorkedHoursFromTimeRange = ({ timeIn, timeOut, breakHours = 1 }) => {
   const startMinutes = parseTimeToMinutes(timeIn);
   const endMinutes = parseTimeToMinutes(timeOut);
@@ -44,6 +56,7 @@ const formatDateKey = (date) => date.toISOString().slice(0, 10);
 module.exports = {
   MINUTES_PER_HOUR,
   parseTimeToMinutes,
+  formatTime12Hour,
   calculateWorkedHoursFromTimeRange,
   startOfWeek,
   formatDateKey

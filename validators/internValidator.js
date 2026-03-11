@@ -1,4 +1,4 @@
-const getInternValidationErrors = (payload = {}) => {
+const getInternValidationErrors = async (payload = {}) => {
   const errors = [];
 
   if (!payload.name || !String(payload.name).trim()) {
@@ -27,7 +27,13 @@ const getInternValidationErrors = (payload = {}) => {
 
 exports.getInternValidationErrors = getInternValidationErrors;
 
-exports.validateIntern = (req, res, next) => {
-  req.validationErrors = getInternValidationErrors(req.body);
-  next();
-};
+async function validateIntern(req, res, next) {
+  try {
+    req.validationErrors = await getInternValidationErrors(req.body);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+exports.validateIntern = validateIntern;

@@ -2,8 +2,23 @@ const { all, get, run } = require('../config/database');
 
 exports.tableName = 'daily_logs';
 
+const dailyLogColumns = `
+  dl.id,
+  dl.intern_id,
+  dl.date,
+  dl.time_in,
+  dl.time_out,
+  dl.break_hours,
+  dl.hours_worked,
+  dl.task_description,
+  dl.status,
+  dl.supervisor_comment,
+  dl.created_at,
+  dl.updated_at
+`;
+
 const selectClause = `
-  SELECT dl.*,
+  SELECT ${dailyLogColumns},
          i.name AS intern_name,
          i.required_hours,
          s.name AS supervisor_name
@@ -12,23 +27,23 @@ const selectClause = `
   LEFT JOIN supervisors s ON s.id = i.supervisor_id
 `;
 
-exports.getAll = () => all(`
+exports.getAll = async () => all(`
   ${selectClause}
   ORDER BY dl.date DESC, dl.id DESC
 `);
 
-exports.getById = (id) => get(`
+exports.getById = async (id) => get(`
   ${selectClause}
   WHERE dl.id = :id
 `, { id: Number(id) });
 
-exports.getByInternId = (internId) => all(`
+exports.getByInternId = async (internId) => all(`
   ${selectClause}
   WHERE dl.intern_id = :internId
   ORDER BY dl.date DESC, dl.id DESC
 `, { internId: Number(internId) });
 
-exports.getRecentByIntern = (internId, limit = 5) => all(`
+exports.getRecentByIntern = async (internId, limit = 5) => all(`
   ${selectClause}
   WHERE dl.intern_id = :internId
   ORDER BY dl.date DESC, dl.id DESC
@@ -38,7 +53,7 @@ exports.getRecentByIntern = (internId, limit = 5) => all(`
   limit: Number(limit)
 });
 
-exports.getBySupervisor = (supervisorId) => all(`
+exports.getBySupervisor = async (supervisorId) => all(`
   ${selectClause}
   WHERE i.supervisor_id = :supervisorId
   ORDER BY CASE dl.status
@@ -49,14 +64,14 @@ exports.getBySupervisor = (supervisorId) => all(`
   dl.date DESC
 `, { supervisorId: Number(supervisorId) });
 
-exports.getApprovedHoursByIntern = (internId) => get(`
+exports.getApprovedHoursByIntern = async (internId) => get(`
   SELECT ROUND(COALESCE(SUM(hours_worked), 0), 2) AS approved_hours
   FROM daily_logs
   WHERE intern_id = :internId
     AND status = 'approved'
 `, { internId: Number(internId) });
 
-exports.findByInternAndDate = (internId, date, excludeId) => {
+exports.findByInternAndDate = async (internId, date, excludeId) => {
   const params = {
     internId: Number(internId),
     date
@@ -64,7 +79,9 @@ exports.findByInternAndDate = (internId, date, excludeId) => {
 
   if (excludeId) {
     return get(`
-      SELECT *
+      SELECT id,
+             intern_id,
+             date
       FROM daily_logs
       WHERE intern_id = :internId
         AND date = :date
@@ -76,14 +93,16 @@ exports.findByInternAndDate = (internId, date, excludeId) => {
   }
 
   return get(`
-    SELECT *
+    SELECT id,
+           intern_id,
+           date
     FROM daily_logs
     WHERE intern_id = :internId
       AND date = :date
   `, params);
 };
 
-exports.create = (payload) => run(`
+exports.create = async (payload) => run(`
   INSERT INTO daily_logs (
     intern_id,
     date,
@@ -118,7 +137,7 @@ exports.create = (payload) => run(`
   supervisor_comment: payload.supervisor_comment || ''
 });
 
-exports.update = (id, payload) => run(`
+exports.update = async (id, payload) => run(`
   UPDATE daily_logs
   SET intern_id = :intern_id,
       date = :date,
@@ -144,7 +163,7 @@ exports.update = (id, payload) => run(`
   supervisor_comment: payload.supervisor_comment || ''
 });
 
-exports.updateStatus = (id, status, comment = '') => run(`
+exports.updateStatus = async (id, status, comment = '') => run(`
   UPDATE daily_logs
   SET status = :status,
       supervisor_comment = :comment,
@@ -156,6 +175,6 @@ exports.updateStatus = (id, status, comment = '') => run(`
   comment
 });
 
-exports.delete = (id) => run(`
+exports.delete = async (id) => run(`
   DELETE FROM daily_logs WHERE id = :id
 `, { id: Number(id) });

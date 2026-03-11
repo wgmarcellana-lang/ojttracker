@@ -77,7 +77,7 @@
               <div>
                 <h4><a href="/logs/<%= log.id %>"><%= log.date %></a></h4>
                 <div class="meta-row">
-                  <span><%= log.time_in %> - <%= log.time_out %></span>
+                  <span><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></span>
                   <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
                 </div>
               </div>

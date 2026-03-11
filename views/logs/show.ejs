@@ -5,7 +5,7 @@
   <div>
     <p class="eyebrow">Daily Log Record</p>
     <h1 class="page-title"><%= log.intern_name %> • <%= log.date %></h1>
-    <p class="page-subtitle">Recorded work period: <%= log.time_in %> to <%= log.time_out %></p>
+    <p class="page-subtitle">Recorded work period: <%= formatTime(log.time_in) %> to <%= formatTime(log.time_out) %></p>
   </div>
 
   <div class="button-row">
@@ -56,7 +56,7 @@
 </section>
 
 <% if (currentUser && (currentUser.role === 'intern' || currentUser.role === 'admin')) { %>
-  <form action="/logs/<%= log.id %>/delete" method="post" style="margin-top: 22px;">
+  <form data-api-form data-api-action="/logs/<%= log.id %>/delete" data-success-redirect="/logs" style="margin-top: 22px;">
     <button class="button button-danger" type="submit">Delete log</button>
   </form>
 <% } %>

@@ -2,8 +2,25 @@ const { all, get, run } = require('../config/database');
 
 exports.tableName = 'supervisors';
 
-exports.getAll = () => all(`
-  SELECT s.*,
+const supervisorColumns = `
+  s.id,
+  s.name,
+  s.email,
+  s.department
+`;
+
+const internColumns = `
+  id,
+  name,
+  school,
+  course,
+  required_hours,
+  start_date,
+  supervisor_id
+`;
+
+exports.getAll = async () => all(`
+  SELECT ${supervisorColumns},
          u.username,
          COUNT(i.id) AS intern_count
   FROM supervisors s
@@ -13,8 +30,8 @@ exports.getAll = () => all(`
   ORDER BY s.name ASC
 `);
 
-exports.getById = (id) => get(`
-  SELECT s.*,
+exports.getById = async (id) => get(`
+  SELECT ${supervisorColumns},
          u.username,
          COUNT(i.id) AS intern_count
   FROM supervisors s
@@ -24,7 +41,7 @@ exports.getById = (id) => get(`
   GROUP BY s.id
 `, { id: Number(id) });
 
-exports.create = (payload) => run(`
+exports.create = async (payload) => run(`
   INSERT INTO supervisors (name, email, department)
   VALUES (:name, :email, :department)
 `, {
@@ -33,7 +50,7 @@ exports.create = (payload) => run(`
   department: payload.department
 });
 
-exports.update = (id, payload) => run(`
+exports.update = async (id, payload) => run(`
   UPDATE supervisors
   SET name = :name,
       email = :email,
@@ -46,12 +63,12 @@ exports.update = (id, payload) => run(`
   department: payload.department
 });
 
-exports.delete = (id) => run(`
+exports.delete = async (id) => run(`
   DELETE FROM supervisors WHERE id = :id
 `, { id: Number(id) });
 
-exports.getInterns = (id) => all(`
-  SELECT *
+exports.getInterns = async (id) => all(`
+  SELECT ${internColumns}
   FROM interns
   WHERE supervisor_id = :id
   ORDER BY name ASC

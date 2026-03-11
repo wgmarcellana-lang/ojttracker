@@ -10,15 +10,18 @@
 </section>
 
 <section class="panel form-card">
+    <ul class="error-list" data-form-errors <%= errors && errors.length ? '' : 'hidden' %>>
   <% if (errors && errors.length) { %>
-    <ul class="error-list">
       <% errors.forEach((error) => { %>
         <li><%= error %></li>
       <% }) %>
-    </ul>
   <% } %>
+    </ul>
 
-  <form action="<%= mode === 'edit' ? '/logs/' + log.id + '/update' : '/logs' %>" method="post" class="form-grid">
+  <form
+    data-api-form
+    data-api-action="<%= mode === 'edit' ? '/logs/' + log.id + '/update' : '/logs' %>"
+    class="form-grid">
     <div class="field">
       <label for="intern_id">Intern</label>
       <select class="select" id="intern_id" name="intern_id" <%= currentUser && currentUser.role === 'intern' ? 'disabled' : '' %>>
@@ -68,7 +71,7 @@
   </form>
 
   <% if (mode === 'edit') { %>
-    <form action="/logs/<%= log.id %>/delete" method="post" style="margin-top: 16px;">
+    <form data-api-form data-api-action="/logs/<%= log.id %>/delete" data-success-redirect="/logs" style="margin-top: 16px;">
       <button class="button button-danger" type="submit">Delete log</button>
     </form>
   <% } %>

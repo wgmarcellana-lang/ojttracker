@@ -715,6 +715,36 @@ label {
   gap: 8px;
 }
 
+.review-cell {
+  min-width: 280px;
+}
+
+.review-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.review-action-form {
+  display: grid;
+  gap: 10px;
+}
+
+.review-inline-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-note-input {
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.review-inline-group .button {
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+
 .login-note {
   margin-top: 20px;
   color: var(--muted);
@@ -792,5 +822,10 @@ label {
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .review-inline-group {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

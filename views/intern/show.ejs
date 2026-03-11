@@ -93,7 +93,7 @@
           <% logs.forEach((log) => { %>
             <tr>
               <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
-              <td><%= log.time_in %> - <%= log.time_out %></td>
+              <td><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></td>
               <td><%= Number(log.hours_worked).toFixed(2) %></td>
               <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
               <td><%= log.task_description %></td>

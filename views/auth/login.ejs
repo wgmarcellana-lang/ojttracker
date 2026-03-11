@@ -11,7 +11,7 @@
       </a>
     </div>
 
-    <p class="eyebrow">Hours Visibility</p>
+    <p class="eyebrow" style="color: white;">Hours Visibility</p>
     <h1 class="hero-title">Track the internship journey with one clean approval flow.</h1>
     <p class="hero-copy" style="color: white;">
       Daily logs, supervisor review, and completion reports live in the same workspace so progress is visible
@@ -25,15 +25,15 @@
       <h2 class="page-title" style="font-size: 2.4rem;">Sign in to the tracker</h2>
       <p class="page-subtitle">Sign in to continue.</p>
 
-      <% if (errors && errors.length) { %>
-        <ul class="error-list">
+      <ul class="error-list" id="login-errors" <%= errors && errors.length ? '' : 'hidden' %>>
+        <% if (errors && errors.length) { %>
           <% errors.forEach((error) => { %>
             <li><%= error %></li>
           <% }) %>
-        </ul>
-      <% } %>
+        <% } %>
+      </ul>
 
-      <form action="/auth/login" method="post" class="stack">
+      <form class="stack" id="login-form">
         <div class="field">
           <label for="username">Username</label>
           <input class="input" id="username" name="username" type="text" value="<%= formData.username || '' %>" placeholder="Enter username">
@@ -50,4 +50,5 @@
   </div>
 </section>
 
+<script src="/js/login.js"></script>
 <%- include('../components/footer') %>

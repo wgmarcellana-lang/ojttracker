@@ -2,7 +2,7 @@ const dailyLogModel = require('../model/dailyLogModel');
 const internModel = require('../model/internModel');
 const supervisorModel = require('../model/supervisorModel');
 const userModel = require('../model/userModel');
-const { db } = require('../config/database');
+const { withTransaction } = require('../config/database');
 
 const buildSupervisorFormState = (payload = {}) => ({
   name: payload.name || '',
@@ -12,7 +12,7 @@ const buildSupervisorFormState = (payload = {}) => ({
   password: payload.password || ''
 });
 
-const getSupervisorValidationErrors = (payload = {}) => {
+const getSupervisorValidationErrors = async (payload = {}) => {
   const errors = [];
 
   if (!payload.name || !String(payload.name).trim()) {
@@ -38,167 +38,222 @@ const getSupervisorValidationErrors = (payload = {}) => {
   return errors;
 };
 
-exports.showDashboard = (req, res) => {
-  const interns = internModel.getAll();
-  const supervisors = supervisorModel.getAll();
-  const logs = dailyLogModel.getAll();
-
-  res.render('admin/dashboard', {
-    pageTitle: 'Admin Dashboard',
-    stats: {
-      interns: interns.length,
-      supervisors: supervisors.length,
-      logs: logs.length,
-      pendingLogs: logs.filter((log) => log.status === 'pending').length
-    },
-    recentLogs: logs.slice(0, 6),
-    interns,
-    supervisors
-  });
-};
-
-exports.manageInterns = (req, res) => {
-  res.render('admin/interns', {
-    pageTitle: 'Manage Interns',
-    interns: internModel.getAll()
-  });
-};
-
-exports.manageSupervisors = (req, res) => {
-  res.render('admin/supervisors', {
-    pageTitle: 'Manage Supervisors',
-    supervisors: supervisorModel.getAll(),
-    formData: buildSupervisorFormState(),
-    errors: [],
-    mode: 'create',
-    supervisor: null
-  });
-};
-
-exports.createSupervisor = (req, res) => {
-  const errors = getSupervisorValidationErrors(req.body);
-
-  if (req.body.username && userModel.getByUsername(req.body.username)) {
-    errors.push('Username is already in use.');
-  }
-
-  if (errors.length) {
-    return res.status(400).render('admin/supervisors', {
-      pageTitle: 'Manage Supervisors',
-      supervisors: supervisorModel.getAll(),
-      formData: buildSupervisorFormState(req.body),
-      errors,
-      mode: 'create',
-      supervisor: null
-    });
-  }
-
+async function showDashboard(req, res, next) {
   try {
-    db.exec('BEGIN');
-    const result = supervisorModel.create(req.body);
-    userModel.create({
-      username: req.body.username,
-      password: req.body.password,
-      role: 'supervisor',
-      supervisor_id: result.lastInsertRowid
+    const [interns, supervisors, logs] = await Promise.all([
+      internModel.getAll(),
+      supervisorModel.getAll(),
+      dailyLogModel.getAll()
+    ]);
+
+    return res.render('admin/dashboard', {
+      pageTitle: 'Admin Dashboard',
+      stats: {
+        interns: interns.length,
+        supervisors: supervisors.length,
+        logs: logs.length,
+        pendingLogs: logs.filter((log) => log.status === 'pending').length
+      },
+      recentLogs: logs.slice(0, 6),
+      interns,
+      supervisors
     });
-    db.exec('COMMIT');
-    res.redirect('/admin/supervisors');
   } catch (error) {
-    db.exec('ROLLBACK');
-    return res.status(400).render('admin/supervisors', {
+    return next(error);
+  }
+}
+
+async function manageInterns(req, res, next) {
+  try {
+    return res.render('admin/interns', {
+      pageTitle: 'Manage Interns',
+      interns: await internModel.getAll()
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function manageSupervisors(req, res, next) {
+  try {
+    return res.render('admin/supervisors', {
       pageTitle: 'Manage Supervisors',
-      supervisors: supervisorModel.getAll(),
-      formData: buildSupervisorFormState(req.body),
-      errors: ['Unable to create supervisor account. Please check the details and try again.'],
+      supervisors: await supervisorModel.getAll(),
+      formData: buildSupervisorFormState(),
+      errors: [],
       mode: 'create',
       supervisor: null
     });
+  } catch (error) {
+    return next(error);
   }
-};
+}
 
-exports.showEditSupervisor = (req, res) => {
-  const supervisor = supervisorModel.getById(req.params.id);
-  if (!supervisor) {
-    return res.status(404).render('error', {
-      message: 'Supervisor not found.',
-      error: {},
-      pageTitle: 'Supervisor Not Found'
-    });
-  }
-
-  res.render('admin/supervisors', {
-    pageTitle: 'Manage Supervisors',
-    supervisors: supervisorModel.getAll(),
-    formData: buildSupervisorFormState({
-      ...supervisor,
-      ...(userModel.getBySupervisorId(supervisor.id) || {})
-    }),
-    errors: [],
-    mode: 'edit',
-    supervisor
-  });
-};
-
-exports.updateSupervisor = (req, res) => {
-  const supervisor = supervisorModel.getById(req.params.id);
-  if (!supervisor) {
-    return res.status(404).render('error', {
-      message: 'Supervisor not found.',
-      error: {},
-      pageTitle: 'Supervisor Not Found'
-    });
-  }
-
-  const errors = getSupervisorValidationErrors(req.body);
-  const existingUser = userModel.getBySupervisorId(req.params.id);
-  const usernameOwner = req.body.username ? userModel.getByUsername(req.body.username) : null;
-
-  if (usernameOwner && (!existingUser || Number(usernameOwner.id) !== Number(existingUser.id))) {
-    errors.push('Username is already in use.');
-  }
-
-  if (errors.length) {
-    return res.status(400).render('admin/supervisors', {
-      pageTitle: 'Manage Supervisors',
-      supervisors: supervisorModel.getAll(),
-      formData: buildSupervisorFormState(req.body),
-      errors,
-      mode: 'edit',
-      supervisor
-    });
-  }
-
+async function createSupervisor(req, res) {
   try {
-    db.exec('BEGIN');
-    supervisorModel.update(req.params.id, req.body);
+    const errors = req.validationErrors || await getSupervisorValidationErrors(req.body);
 
-    if (existingUser) {
-      userModel.update(existingUser.id, {
-        username: req.body.username,
-        password: req.body.password,
-        role: 'supervisor',
-        supervisor_id: req.params.id
+    if (req.body.username && await userModel.getByUsername(req.body.username)) {
+      errors.push('Username is already in use.');
+    }
+
+    if (errors.length) {
+      return res.status(400).json({
+        success: false,
+        details: 'Validation failed.',
+        errors,
+        formData: buildSupervisorFormState(req.body)
       });
     }
 
-    db.exec('COMMIT');
-    res.redirect('/admin/supervisors');
+    const result = await withTransaction(async () => {
+      const createdSupervisor = await supervisorModel.create(req.body);
+      await userModel.create({
+        username: req.body.username,
+        password: req.body.password,
+        role: 'supervisor',
+        supervisor_id: createdSupervisor.lastInsertRowid
+      });
+
+      return createdSupervisor;
+    });
+
+    return res.status(201).json({
+      success: true,
+      details: 'Supervisor created successfully.',
+      redirectPath: '/admin/supervisors',
+      supervisorId: Number(result.lastInsertRowid)
+    });
   } catch (error) {
-    db.exec('ROLLBACK');
-    return res.status(400).render('admin/supervisors', {
+    return res.status(400).json({
+      success: false,
+      details: 'Unable to create supervisor account. Please check the details and try again.',
+      errors: ['Unable to create supervisor account. Please check the details and try again.'],
+      formData: buildSupervisorFormState(req.body)
+    });
+  }
+}
+
+async function showEditSupervisor(req, res, next) {
+  try {
+    const supervisor = await supervisorModel.getById(req.params.id);
+    if (!supervisor) {
+      return res.status(404).render('error', {
+        message: 'Supervisor not found.',
+        error: {},
+        pageTitle: 'Supervisor Not Found'
+      });
+    }
+
+    const [supervisors, userAccount] = await Promise.all([
+      supervisorModel.getAll(),
+      userModel.getBySupervisorId(supervisor.id)
+    ]);
+
+    return res.render('admin/supervisors', {
       pageTitle: 'Manage Supervisors',
-      supervisors: supervisorModel.getAll(),
-      formData: buildSupervisorFormState(req.body),
-      errors: ['Unable to update supervisor account. Please check the details and try again.'],
+      supervisors,
+      formData: buildSupervisorFormState({
+        ...supervisor,
+        ...(userAccount || {})
+      }),
+      errors: [],
       mode: 'edit',
       supervisor
     });
+  } catch (error) {
+    return next(error);
   }
-};
+}
 
-exports.deleteSupervisor = (req, res) => {
-  userModel.deleteBySupervisorId(req.params.id);
-  supervisorModel.delete(req.params.id);
-  res.redirect('/admin/supervisors');
-};
+async function updateSupervisor(req, res) {
+  try {
+    const supervisor = await supervisorModel.getById(req.params.id);
+    if (!supervisor) {
+      return res.status(404).json({
+        success: false,
+        details: 'Supervisor not found.'
+      });
+    }
+
+    const errors = req.validationErrors || await getSupervisorValidationErrors(req.body);
+    const [existingUser, usernameOwner] = await Promise.all([
+      userModel.getBySupervisorId(req.params.id),
+      req.body.username ? userModel.getByUsername(req.body.username) : Promise.resolve(null)
+    ]);
+
+    if (usernameOwner && (!existingUser || Number(usernameOwner.id) !== Number(existingUser.id))) {
+      errors.push('Username is already in use.');
+    }
+
+    if (errors.length) {
+      return res.status(400).json({
+        success: false,
+        details: 'Validation failed.',
+        errors,
+        formData: buildSupervisorFormState(req.body)
+      });
+    }
+
+    await withTransaction(async () => {
+      await supervisorModel.update(req.params.id, req.body);
+
+      if (existingUser) {
+        await userModel.update(existingUser.id, {
+          username: req.body.username,
+          password: req.body.password,
+          role: 'supervisor',
+          supervisor_id: req.params.id
+        });
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      details: 'Supervisor updated successfully.',
+      redirectPath: '/admin/supervisors',
+      supervisorId: Number(req.params.id)
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      details: 'Unable to update supervisor account. Please check the details and try again.',
+      errors: ['Unable to update supervisor account. Please check the details and try again.'],
+      formData: buildSupervisorFormState(req.body)
+    });
+  }
+}
+
+async function deleteSupervisor(req, res, next) {
+  try {
+    const supervisor = await supervisorModel.getById(req.params.id);
+    if (!supervisor) {
+      return res.status(404).json({
+        success: false,
+        details: 'Supervisor not found.'
+      });
+    }
+
+    await withTransaction(async () => {
+      await userModel.deleteBySupervisorId(req.params.id);
+      await supervisorModel.delete(req.params.id);
+    });
+
+    return res.status(200).json({
+      success: true,
+      details: 'Supervisor deleted successfully.',
+      redirectPath: '/admin/supervisors',
+      supervisorId: Number(req.params.id)
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+exports.showDashboard = showDashboard;
+exports.manageInterns = manageInterns;
+exports.manageSupervisors = manageSupervisors;
+exports.createSupervisor = createSupervisor;
+exports.showEditSupervisor = showEditSupervisor;
+exports.updateSupervisor = updateSupervisor;
+exports.deleteSupervisor = deleteSupervisor;

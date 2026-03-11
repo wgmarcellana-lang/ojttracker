@@ -1,4 +1,4 @@
-const getDailyLogValidationErrors = (payload = {}) => {
+const getDailyLogValidationErrors = async (payload = {}) => {
   const errors = [];
 
   if (!payload.date || Number.isNaN(new Date(payload.date).getTime())) {
@@ -31,7 +31,13 @@ const getDailyLogValidationErrors = (payload = {}) => {
 
 exports.getDailyLogValidationErrors = getDailyLogValidationErrors;
 
-exports.validateDailyLog = (req, res, next) => {
-  req.validationErrors = getDailyLogValidationErrors(req.body);
-  next();
-};
+async function validateDailyLog(req, res, next) {
+  try {
+    req.validationErrors = await getDailyLogValidationErrors(req.body);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+exports.validateDailyLog = validateDailyLog;
