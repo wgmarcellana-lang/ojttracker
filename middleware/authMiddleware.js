@@ -2,11 +2,23 @@ const internModel = require('../model/internModel');
 const supervisorModel = require('../model/supervisorModel');
 const userModel = require('../model/userModel');
 const authConfig = require('../config/auth');
-const { decryptAuthCookie } = require('../utilities/authCookie');
+const { decryptAuthCookie, decryptAuthToken } = require('../utilities/authCookie');
 
 const AUTH_COOKIE_NAME = authConfig.authCookieName;
 
 const parseAuthCookie = async (cookieValue) => decryptAuthCookie(cookieValue);
+const parseBearerToken = async (authorizationHeader) => {
+  if (!authorizationHeader) {
+    return null;
+  }
+
+  const [scheme, token] = String(authorizationHeader).split(' ');
+  if (!scheme || !token || scheme.toLowerCase() !== 'bearer') {
+    return null;
+  }
+
+  return decryptAuthToken(token);
+};
 
 const getRedirectPath = (user) => {
   if (!user) {
@@ -18,7 +30,8 @@ const getRedirectPath = (user) => {
 
 const loadCurrentUser = async (req, res, next) => {
   try {
-    const parsed = await parseAuthCookie(req.cookies[AUTH_COOKIE_NAME]);
+    const parsed = await parseBearerToken(req.get('Authorization'))
+      || await parseAuthCookie(req.cookies[AUTH_COOKIE_NAME]);
 
     if (!parsed) {
       req.user = null;
@@ -87,5 +100,6 @@ module.exports = {
   getRedirectPath,
   loadCurrentUser,
   parseAuthCookie,
+  parseBearerToken,
   requireAuth
 };

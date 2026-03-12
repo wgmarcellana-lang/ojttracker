@@ -31,13 +31,13 @@
       <tbody>
         <% interns.forEach((intern) => { %>
           <tr>
-            <td><strong><%= intern.name %></strong></td>
-            <td><%= intern.username || 'No account' %></td>
-            <td><%= intern.school %></td>
-            <td><%= intern.course %></td>
-            <td><%= intern.supervisor_name || 'Unassigned' %></td>
-            <td><%= intern.required_hours %></td>
-            <td class="action-cell">
+            <td data-label="Name"><strong><%= intern.name %></strong></td>
+            <td data-label="Username"><%= intern.username || 'No account' %></td>
+            <td data-label="School"><%= intern.school %></td>
+            <td data-label="Course"><%= intern.course %></td>
+            <td data-label="Supervisor"><%= intern.supervisor_name || 'Unassigned' %></td>
+            <td data-label="Required Hours"><%= intern.required_hours %></td>
+            <td data-label="Actions" class="action-cell">
               <a class="button button-ghost" href="/interns/<%= intern.id %>">View</a>
               <a class="button button-secondary" href="/interns/<%= intern.id %>/edit">Edit</a>
             </td>

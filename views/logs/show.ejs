@@ -4,7 +4,7 @@
 <section class="page-hero">
   <div>
     <p class="eyebrow">Daily Log Record</p>
-    <h1 class="page-title"><%= log.intern_name %> • <%= log.date %></h1>
+    <h1 class="page-title"><%= log.intern_name %> • <%= formatDate(log.date) %></h1>
     <p class="page-subtitle">Recorded work period: <%= formatTime(log.time_in) %> to <%= formatTime(log.time_out) %></p>
   </div>
 

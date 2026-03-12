@@ -9,6 +9,7 @@ router.use(requireAuth, requireRole('admin'));
 router.get('/dashboard', adminController.showDashboard);
 router.get('/interns', adminController.manageInterns);
 router.get('/supervisors', adminController.manageSupervisors);
+router.get('/supervisors/new', adminController.showCreateSupervisor);
 router.post('/supervisors', adminController.createSupervisor);
 router.get('/supervisors/:id/edit', adminController.showEditSupervisor);
 router.post('/supervisors/:id/update', adminController.updateSupervisor);

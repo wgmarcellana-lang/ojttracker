@@ -44,7 +44,7 @@
       </div>
       <div class="detail-card">
         <span>Start date</span>
-        <strong><%= intern.start_date %></strong>
+        <strong><%= formatDate(intern.start_date) %></strong>
       </div>
       <div class="detail-card">
         <span>Supervisor</span>
@@ -90,13 +90,13 @@
           </tr>
         </thead>
         <tbody>
-          <% logs.forEach((log) => { %>
-            <tr>
-              <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
-              <td><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></td>
-              <td><%= Number(log.hours_worked).toFixed(2) %></td>
-              <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
-              <td><%= log.task_description %></td>
+        <% logs.forEach((log) => { %>
+          <tr>
+              <td data-label="Date"><a href="/logs/<%= log.id %>"><%= formatDate(log.date) %></a></td>
+              <td data-label="Time Range"><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></td>
+              <td data-label="Hours"><%= Number(log.hours_worked).toFixed(2) %></td>
+              <td data-label="Status"><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+              <td data-label="Task"><%= log.task_description %></td>
             </tr>
           <% }) %>
         </tbody>

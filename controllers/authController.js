@@ -1,7 +1,7 @@
 const userModel = require('../model/userModel');
 const { AUTH_COOKIE_NAME, getRedirectPath } = require('../middleware/authMiddleware');
 const { getLoginValidationErrors } = require('../validators/authValidator');
-const { encryptAuthCookie } = require('../utilities/authCookie');
+const { encryptAuthCookie, encryptAuthToken } = require('../utilities/authCookie');
 const { isPasswordHash, verifyPassword } = require('../utilities/passwordUtils');
 
 const getLoginFormData = (payload = {}) => ({
@@ -74,6 +74,10 @@ async function login(req, res, next) {
       role: account.role,
       userId: account.id
     });
+    const accessToken = await encryptAuthToken({
+      role: account.role,
+      userId: account.id
+    });
 
     res.cookie(AUTH_COOKIE_NAME, encryptedCookie, {
       httpOnly: true,
@@ -84,6 +88,7 @@ async function login(req, res, next) {
       success: true,
       details: 'Login successful.',
       redirectPath: getRedirectPath({ role: account.role }),
+      accessToken,
       user: {
         id: account.id,
         username: account.username,

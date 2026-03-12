@@ -101,9 +101,9 @@
             <tbody>
               <% report.weeklySummary.forEach((week) => { %>
                 <tr>
-                  <td><%= week.weekStart %></td>
-                  <td><%= Number(week.hours).toFixed(2) %></td>
-                  <td><%= week.approvedLogs %></td>
+                  <td data-label="Week Start"><%= formatDate(week.weekStart) %></td>
+                  <td data-label="Hours"><%= Number(week.hours).toFixed(2) %></td>
+                  <td data-label="Approved Logs"><%= week.approvedLogs %></td>
                 </tr>
               <% }) %>
             </tbody>

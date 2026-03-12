@@ -5,7 +5,7 @@ var logger = require('morgan');
 var securityHeaders = require('./middleware/securityHeaders');
 var notFound = require('./middleware/notFound');
 var errorHandler = require('./middleware/errorHandler');
-var { formatTime12Hour } = require('./utilities/timeUtils');
+var { formatLongDate, formatTime12Hour } = require('./utilities/timeUtils');
 
 require('dotenv').config({
   path: path.join(__dirname, 'config', '.env')
@@ -21,6 +21,7 @@ var dailyLogRouter = require('./routes/dailyLogRoutes');
 var supervisorRouter = require('./routes/supervisorRoutes');
 var adminRouter = require('./routes/adminRoutes');
 var reportRouter = require('./routes/reportRoutes');
+var apiRouter = require('./routes/apiRoutes');
 var { loadCurrentUser } = require('./middleware/authMiddleware');
 
 var app = express();
@@ -28,6 +29,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.disable('x-powered-by');
+app.locals.formatDate = formatLongDate;
 app.locals.formatTime = formatTime12Hour;
 
 app.use(logger('dev'));
@@ -45,6 +47,7 @@ app.use('/logs', dailyLogRouter);
 app.use('/supervisors', supervisorRouter);
 app.use('/admin', adminRouter);
 app.use('/reports', reportRouter);
+app.use('/api', apiRouter);
 app.use('/users', usersRouter);
 
 app.use(notFound);

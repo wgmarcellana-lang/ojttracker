@@ -28,52 +28,84 @@
   }
 
   const pathValue = currentPath || '';
-  const isActiveLink = (href) => pathValue === href || (href !== '/' && pathValue.indexOf(href + '/') === 0);
+  const isActiveLink = (href) => {
+    if (pathValue === href) {
+      return true;
+    }
+
+    if (href === '/logs') {
+      return /^\/logs\/(?!new(?:\/|$))/.test(pathValue);
+    }
+
+    return href !== '/' && pathValue.indexOf(href + '/') === 0;
+  };
 %>
 <div class="app-shell">
   <aside class="sidebar">
-    <a class="brand" href="/">
-      <span class="brand-mark">OJ</span>
-      <span class="brand-copy">
-        <strong>OJT Tracker</strong>
-      </span>
-    </a>
-
-    <nav class="nav-stack">
-      <% navItems.forEach((item) => { %>
-        <a href="<%= item.href %>" class="nav-link <%= isActiveLink(item.href) ? 'is-active' : '' %>">
-          <span class="nav-icon"><%= item.short %></span>
-          <span><%= item.label %></span>
-        </a>
-      <% }) %>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="profile-chip">
-        <span class="profile-avatar">
-          <%= user && user.profile && user.profile.name ? user.profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() : 'OJ' %>
+    <div class="sidebar-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">OJ</span>
+        <span class="brand-copy">
+          <strong>OJT Tracker</strong>
+          <small>Hours and approvals</small>
         </span>
-        <div>
-          <strong><%= user && user.profile ? user.profile.name : 'Guest' %></strong>
-          <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Visitor' %></small>
-        </div>
-      </div>
+      </a>
 
-      <form id="logout-form">
-        <button class="button button-ghost button-block" type="submit">Sign out</button>
-      </form>
+      <nav class="nav-stack">
+        <% navItems.forEach((item) => { %>
+          <a href="<%= item.href %>" class="nav-link <%= isActiveLink(item.href) ? 'is-active' : '' %>">
+            <span class="nav-icon"><%= item.short %></span>
+            <span><%= item.label %></span>
+          </a>
+        <% }) %>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="profile-chip">
+          <span class="profile-avatar">
+            <%= user && user.profile && user.profile.name ? user.profile.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() : 'OJ' %>
+          </span>
+          <div>
+            <strong><%= user && user.profile ? user.profile.name : 'Guest' %></strong>
+            <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Visitor' %></small>
+          </div>
+        </div>
+
+        <form data-logout-form>
+          <button class="button button-ghost button-block" type="submit">Sign out</button>
+        </form>
+      </div>
     </div>
   </aside>
 
   <div class="content-shell">
     <header class="mobile-bar">
-      <a class="brand brand-inline" href="/">
-        <span class="brand-mark">OJ</span>
-        <span class="brand-copy">
-          <strong>OJT Tracker</strong>
-          <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : '' %></small>
-        </span>
-      </a>
+      <div class="mobile-bar-shell">
+        <a class="brand brand-inline" href="/">
+          <span class="brand-mark">OJ</span>
+          <span class="brand-copy">
+            <strong>OJT Tracker</strong>
+            <small><%= role ? role.charAt(0).toUpperCase() + role.slice(1) : '' %></small>
+          </span>
+        </a>
+
+        <% if (user) { %>
+          <form data-logout-form class="mobile-logout-form">
+            <button class="button button-ghost mobile-logout-button" type="submit">Sign out</button>
+          </form>
+        <% } %>
+      </div>
+
+      <% if (navItems.length) { %>
+        <nav class="mobile-nav" aria-label="Primary navigation">
+          <% navItems.forEach((item) => { %>
+            <a href="<%= item.href %>" class="mobile-nav-link <%= isActiveLink(item.href) ? 'is-active' : '' %>">
+              <span class="mobile-nav-short"><%= item.short %></span>
+              <span><%= item.label %></span>
+            </a>
+          <% }) %>
+        </nav>
+      <% } %>
     </header>
 
     <main class="page-shell">

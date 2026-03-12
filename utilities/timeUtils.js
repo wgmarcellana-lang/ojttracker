@@ -23,6 +23,26 @@ const formatTime12Hour = (timeValue) => {
   return `${String(normalizedHour).padStart(2, '0')}:${String(minuteValue).padStart(2, '0')} ${meridiem}`;
 };
 
+const formatLongDate = (dateValue) => {
+  if (!dateValue) {
+    return '';
+  }
+
+  const normalizedDate = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue))
+    ? new Date(`${dateValue}T00:00:00`)
+    : new Date(dateValue);
+
+  if (Number.isNaN(normalizedDate.getTime())) {
+    return dateValue;
+  }
+
+  return normalizedDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
 const calculateWorkedHoursFromTimeRange = ({ timeIn, timeOut, breakHours = 1 }) => {
   const startMinutes = parseTimeToMinutes(timeIn);
   const endMinutes = parseTimeToMinutes(timeOut);
@@ -56,6 +76,7 @@ const formatDateKey = (date) => date.toISOString().slice(0, 10);
 module.exports = {
   MINUTES_PER_HOUR,
   parseTimeToMinutes,
+  formatLongDate,
   formatTime12Hour,
   calculateWorkedHoursFromTimeRange,
   startOfWeek,

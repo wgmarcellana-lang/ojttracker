@@ -79,6 +79,23 @@ async function manageSupervisors(req, res, next) {
     return res.render('admin/supervisors', {
       pageTitle: 'Manage Supervisors',
       supervisors: await supervisorModel.getAll(),
+      showForm: false,
+      formData: buildSupervisorFormState(),
+      errors: [],
+      mode: 'create',
+      supervisor: null
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function showCreateSupervisor(req, res, next) {
+  try {
+    return res.render('admin/supervisors', {
+      pageTitle: 'Add Supervisor',
+      supervisors: await supervisorModel.getAll(),
+      showForm: true,
       formData: buildSupervisorFormState(),
       errors: [],
       mode: 'create',
@@ -153,6 +170,7 @@ async function showEditSupervisor(req, res, next) {
     return res.render('admin/supervisors', {
       pageTitle: 'Manage Supervisors',
       supervisors,
+      showForm: true,
       formData: buildSupervisorFormState({
         ...supervisor,
         ...(userAccount || {})
@@ -253,6 +271,7 @@ async function deleteSupervisor(req, res, next) {
 exports.showDashboard = showDashboard;
 exports.manageInterns = manageInterns;
 exports.manageSupervisors = manageSupervisors;
+exports.showCreateSupervisor = showCreateSupervisor;
 exports.createSupervisor = createSupervisor;
 exports.showEditSupervisor = showEditSupervisor;
 exports.updateSupervisor = updateSupervisor;

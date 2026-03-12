@@ -1,4 +1,4 @@
-const logoutForm = document.querySelector('#logout-form');
+const logoutForms = document.querySelectorAll('[data-logout-form]');
 
 const connectLogoutForm = async (event) => {
   event.preventDefault();
@@ -27,6 +27,6 @@ const connectLogoutForm = async (event) => {
   }
 };
 
-if (logoutForm) {
+logoutForms.forEach((logoutForm) => {
   logoutForm.addEventListener('submit', connectLogoutForm);
-}
+});

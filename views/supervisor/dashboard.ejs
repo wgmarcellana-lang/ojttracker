@@ -54,7 +54,7 @@
           <div class="timeline-item">
             <div class="panel-header">
               <div>
-                <h4><%= log.intern_name %> • <%= log.date %></h4>
+                <h4><%= log.intern_name %> • <%= formatDate(log.date) %></h4>
                 <div class="meta-row">
                   <span><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></span>
                   <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
@@ -77,18 +77,22 @@
       </div>
     </div>
 
-    <div class="list-stack">
-      <% interns.forEach((intern) => { %>
-        <div class="summary-row">
-          <h4><%= intern.name %></h4>
-          <div class="meta-row">
-            <span><%= intern.school %></span>
-            <span><%= intern.course %></span>
-            <span>Required: <%= intern.required_hours %> hrs</span>
+    <% if (!interns.length) { %>
+      <div class="empty-state">No interns are assigned to this supervisor yet.</div>
+    <% } else { %>
+      <div class="list-stack">
+        <% interns.forEach((intern) => { %>
+          <div class="summary-row">
+            <h4><%= intern.name %></h4>
+            <div class="meta-row">
+              <span><%= intern.school %></span>
+              <span><%= intern.course %></span>
+              <span>Required: <%= intern.required_hours %> hrs</span>
+            </div>
           </div>
-        </div>
-      <% }) %>
-    </div>
+        <% }) %>
+      </div>
+    <% } %>
   </article>
 </section>
 

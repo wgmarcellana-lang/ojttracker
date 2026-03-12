@@ -32,13 +32,13 @@
       <tbody>
         <% logs.forEach((log) => { %>
           <tr>
-            <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
-            <td><%= log.intern_name %></td>
-            <td><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></td>
-            <td><%= Number(log.hours_worked).toFixed(2) %></td>
-            <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
-            <td><%= log.task_description %></td>
-            <td class="action-cell">
+            <td data-label="Date"><a href="/logs/<%= log.id %>"><%= formatDate(log.date) %></a></td>
+            <td data-label="Intern"><%= log.intern_name %></td>
+            <td data-label="Time Range"><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></td>
+            <td data-label="Hours"><%= Number(log.hours_worked).toFixed(2) %></td>
+            <td data-label="Status"><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+            <td data-label="Task"><%= log.task_description %></td>
+            <td data-label="Actions" class="action-cell">
               <a class="button button-ghost" href="/logs/<%= log.id %>">View</a>
               <% if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'intern')) { %>
                 <a class="button button-secondary" href="/logs/<%= log.id %>/edit">Edit</a>

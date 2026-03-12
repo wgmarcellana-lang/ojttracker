@@ -75,7 +75,7 @@
           <div class="timeline-item">
             <div class="panel-header">
               <div>
-                <h4><a href="/logs/<%= log.id %>"><%= log.date %></a></h4>
+                <h4><a href="/logs/<%= log.id %>"><%= formatDate(log.date) %></a></h4>
                 <div class="meta-row">
                   <span><%= formatTime(log.time_in) %> - <%= formatTime(log.time_out) %></span>
                   <span><%= Number(log.hours_worked).toFixed(2) %> hours</span>
@@ -113,13 +113,13 @@
           </tr>
         </thead>
         <tbody>
-          <% weeklySummary.forEach((week) => { %>
-            <tr>
-              <td><%= week.weekStart %></td>
-              <td><%= Number(week.hours).toFixed(2) %></td>
-              <td><%= week.approvedLogs %> approved of <%= week.totalLogs %></td>
-            </tr>
-          <% }) %>
+        <% weeklySummary.forEach((week) => { %>
+          <tr>
+            <td data-label="Week Start"><%= formatDate(week.weekStart) %></td>
+            <td data-label="Approved Hours"><%= Number(week.hours).toFixed(2) %></td>
+            <td data-label="Logs"><%= week.approvedLogs %> approved of <%= week.totalLogs %></td>
+          </tr>
+        <% }) %>
         </tbody>
       </table>
     </div>

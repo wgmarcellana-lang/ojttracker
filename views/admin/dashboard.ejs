@@ -84,11 +84,11 @@
       <tbody>
         <% recentLogs.forEach((log) => { %>
           <tr>
-            <td><a href="/logs/<%= log.id %>"><%= log.date %></a></td>
-            <td><%= log.intern_name %></td>
-            <td><%= Number(log.hours_worked).toFixed(2) %></td>
-            <td><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
-            <td><%= log.supervisor_name || 'Unassigned' %></td>
+            <td data-label="Date"><a href="/logs/<%= log.id %>"><%= formatDate(log.date) %></a></td>
+            <td data-label="Intern"><%= log.intern_name %></td>
+            <td data-label="Hours"><%= Number(log.hours_worked).toFixed(2) %></td>
+            <td data-label="Status"><span class="badge badge-<%= log.status %>"><%= log.status %></span></td>
+            <td data-label="Supervisor"><%= log.supervisor_name || 'Unassigned' %></td>
           </tr>
         <% }) %>
       </tbody>

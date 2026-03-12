@@ -28,6 +28,8 @@ exports.encryptAuthCookie = async (payload = {}) => {
   ].join('.');
 };
 
+exports.encryptAuthToken = exports.encryptAuthCookie;
+
 exports.decryptAuthCookie = async (token) => {
   if (!token) {
     return null;
@@ -65,3 +67,5 @@ exports.decryptAuthCookie = async (token) => {
     return null;
   }
 };
+
+exports.decryptAuthToken = exports.decryptAuthCookie;
