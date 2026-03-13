@@ -108,9 +108,11 @@ async function showCreateSupervisor(req, res, next) {
 
 async function createSupervisor(req, res) {
   try {
-    const errors = req.validationErrors || await getSupervisorValidationErrors(req.body);
+    const { body, validationErrors = [] } = req;
+    const { username, password } = body;
+    const errors = validationErrors.length ? validationErrors : await getSupervisorValidationErrors(body);
 
-    if (req.body.username && await userModel.getByUsername(req.body.username)) {
+    if (username && await userModel.getByUsername(username)) {
       errors.push('Username is already in use.');
     }
 
@@ -119,15 +121,15 @@ async function createSupervisor(req, res) {
         success: false,
         details: 'Validation failed.',
         errors,
-        formData: buildSupervisorFormState(req.body)
+        formData: buildSupervisorFormState(body)
       });
     }
 
     const result = await withTransaction(async () => {
-      const createdSupervisor = await supervisorModel.create(req.body);
+      const createdSupervisor = await supervisorModel.create(body);
       await userModel.create({
-        username: req.body.username,
-        password: req.body.password,
+        username,
+        password,
         role: 'supervisor',
         supervisor_id: createdSupervisor.lastInsertRowid
       });
@@ -153,7 +155,9 @@ async function createSupervisor(req, res) {
 
 async function showEditSupervisor(req, res, next) {
   try {
-    const supervisor = await supervisorModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const supervisor = await supervisorModel.getById(id);
     if (!supervisor) {
       return res.status(404).render('error', {
         message: 'Supervisor not found.',
@@ -186,7 +190,10 @@ async function showEditSupervisor(req, res, next) {
 
 async function updateSupervisor(req, res) {
   try {
-    const supervisor = await supervisorModel.getById(req.params.id);
+    const { body, params, validationErrors = [] } = req;
+    const { id } = params;
+    const { username, password } = body;
+    const supervisor = await supervisorModel.getById(id);
     if (!supervisor) {
       return res.status(404).json({
         success: false,
@@ -194,10 +201,10 @@ async function updateSupervisor(req, res) {
       });
     }
 
-    const errors = req.validationErrors || await getSupervisorValidationErrors(req.body);
+    const errors = validationErrors.length ? validationErrors : await getSupervisorValidationErrors(body);
     const [existingUser, usernameOwner] = await Promise.all([
-      userModel.getBySupervisorId(req.params.id),
-      req.body.username ? userModel.getByUsername(req.body.username) : Promise.resolve(null)
+      userModel.getBySupervisorId(id),
+      username ? userModel.getByUsername(username) : Promise.resolve(null)
     ]);
 
     if (usernameOwner && (!existingUser || Number(usernameOwner.id) !== Number(existingUser.id))) {
@@ -209,19 +216,19 @@ async function updateSupervisor(req, res) {
         success: false,
         details: 'Validation failed.',
         errors,
-        formData: buildSupervisorFormState(req.body)
+        formData: buildSupervisorFormState(body)
       });
     }
 
     await withTransaction(async () => {
-      await supervisorModel.update(req.params.id, req.body);
+      await supervisorModel.update(id, body);
 
       if (existingUser) {
         await userModel.update(existingUser.id, {
-          username: req.body.username,
-          password: req.body.password,
+          username,
+          password,
           role: 'supervisor',
-          supervisor_id: req.params.id
+          supervisor_id: id
         });
       }
     });
@@ -230,7 +237,7 @@ async function updateSupervisor(req, res) {
       success: true,
       details: 'Supervisor updated successfully.',
       redirectPath: '/admin/supervisors',
-      supervisorId: Number(req.params.id)
+      supervisorId: Number(id)
     });
   } catch (error) {
     return res.status(400).json({
@@ -244,7 +251,9 @@ async function updateSupervisor(req, res) {
 
 async function deleteSupervisor(req, res, next) {
   try {
-    const supervisor = await supervisorModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const supervisor = await supervisorModel.getById(id);
     if (!supervisor) {
       return res.status(404).json({
         success: false,
@@ -253,15 +262,15 @@ async function deleteSupervisor(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await userModel.deleteBySupervisorId(req.params.id);
-      await supervisorModel.delete(req.params.id);
+      await userModel.deleteBySupervisorId(id);
+      await supervisorModel.delete(id);
     });
 
     return res.status(200).json({
       success: true,
       details: 'Supervisor deleted successfully.',
       redirectPath: '/admin/supervisors',
-      supervisorId: Number(req.params.id)
+      supervisorId: Number(id)
     });
   } catch (error) {
     return next(error);

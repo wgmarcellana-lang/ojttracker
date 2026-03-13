@@ -30,13 +30,15 @@ const getRedirectPath = (user) => {
 
 const loadCurrentUser = async (req, res, next) => {
   try {
-    const parsed = await parseBearerToken(req.get('Authorization'))
-      || await parseAuthCookie(req.cookies[AUTH_COOKIE_NAME]);
+    const { cookies, path } = req;
+    const authorization = req.get('Authorization');
+    const parsed = await parseBearerToken(authorization)
+      || await parseAuthCookie(cookies[AUTH_COOKIE_NAME]);
 
     if (!parsed) {
       req.user = null;
       res.locals.currentUser = null;
-      res.locals.currentPath = req.path;
+      res.locals.currentPath = path;
       return next();
     }
 
@@ -72,7 +74,7 @@ const loadCurrentUser = async (req, res, next) => {
     } : null;
 
     res.locals.currentUser = req.user;
-    res.locals.currentPath = req.path;
+    res.locals.currentPath = path;
     return next();
   } catch (error) {
     return next(error);
@@ -81,7 +83,9 @@ const loadCurrentUser = async (req, res, next) => {
 
 const requireAuth = async (req, res, next) => {
   try {
-    if (!req.user) {
+    const { user } = req;
+
+    if (!user) {
       return res.status(401).json({
         success: false,
         details: 'Authentication required.',

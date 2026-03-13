@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Alert, SafeAreaView, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, ScrollView, Share, Text, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './src/styles';
 import {
   AdminDashboardScreen,
@@ -288,30 +289,32 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {!auth.user ? (
-          <LoginScreen
-            busy={workspace.busy}
-            errorNode={renderError}
-            loginForm={auth.loginForm}
-            onChangeLoginForm={auth.updateLoginForm}
-            onSubmit={handleLogin}
-          />
-        ) : (
-          <WorkspaceShell
-            user={auth.user}
-            activeTab={workspace.activeTab}
-            busy={workspace.busy}
-            errorNode={renderError}
-            onSelectTab={handleSelectTab}
-            onSignOut={handleSignOut}
-          >
-            {renderWorkspaceContent()}
-          </WorkspaceShell>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="dark" />
+        <ScrollView contentContainerStyle={styles.scroll}>
+          {!auth.user ? (
+            <LoginScreen
+              busy={workspace.busy}
+              errorNode={renderError}
+              loginForm={auth.loginForm}
+              onChangeLoginForm={auth.updateLoginForm}
+              onSubmit={handleLogin}
+            />
+          ) : (
+            <WorkspaceShell
+              user={auth.user}
+              activeTab={workspace.activeTab}
+              busy={workspace.busy}
+              errorNode={renderError}
+              onSelectTab={handleSelectTab}
+              onSignOut={handleSignOut}
+            >
+              {renderWorkspaceContent()}
+            </WorkspaceShell>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

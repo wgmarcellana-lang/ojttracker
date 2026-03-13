@@ -1,8 +1,6 @@
 const userModel = require('../model/userModel');
 const { AUTH_COOKIE_NAME, getRedirectPath } = require('../middleware/authMiddleware');
-const { getLoginValidationErrors } = require('../validators/authValidator');
 const { encryptAuthCookie, encryptAuthToken } = require('../utilities/authCookie');
-const { isPasswordHash, verifyPassword } = require('../utilities/passwordUtils');
 
 const getLoginFormData = (payload = {}) => ({
   username: payload.username || '',
@@ -18,9 +16,11 @@ const buildInvalidLoginResponse = (payload = {}) => ({
 
 async function showLogin(req, res, next) {
   try {
+    const { user } = req;
+
     return res.render('auth/login', {
       pageTitle: 'Login',
-      errors: req.user ? ['You are already logged in.'] : [],
+      errors: user ? ['You are already logged in.'] : [],
       formData: getLoginFormData()
     });
   } catch (error) {
@@ -30,11 +30,12 @@ async function showLogin(req, res, next) {
 
 async function getSession(req, res, next) {
   try {
+    const { user } = req;
+
     return res.status(200).json({
       success: true,
-      authenticated: Boolean(req.user),
-      redirectPath: getRedirectPath(req.user),
-      user: req.user || null
+      authenticated: Boolean(user),
+      redirectPath: getRedirectPath(user)
     });
   } catch (error) {
     return next(error);
@@ -43,40 +44,35 @@ async function getSession(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const errors = req.validationErrors || await getLoginValidationErrors(req.body);
+    const { body, validationErrors = [] } = req;
+    const { username, password } = body;
+    const errors = validationErrors;
 
     if (errors.length) {
       return res.status(400).json({
         success: false,
         details: 'Validation failed.',
         errors,
-        formData: getLoginFormData(req.body)
+        formData: getLoginFormData(body)
       });
     }
 
-    const username = String(req.body.username).trim().toLowerCase();
-    const account = await userModel.getByUsername(username);
+    const accounts = await userModel.verifyCredentials(username, password);
 
-    if (!account) {
-      return res.status(401).json(buildInvalidLoginResponse(req.body));
+    if (accounts.length === 0) {
+      return res.status(401).json(buildInvalidLoginResponse(body));
     }
 
-    const isPasswordValid = await verifyPassword(req.body.password, account.password);
-    if (!isPasswordValid) {
-      return res.status(401).json(buildInvalidLoginResponse(req.body));
-    }
-
-    if (!isPasswordHash(account.password)) {
-      await userModel.updatePassword(account.id, req.body.password);
-    }
+    const [account] = accounts;
+    const { id, role } = account;
 
     const encryptedCookie = await encryptAuthCookie({
-      role: account.role,
-      userId: account.id
+      role,
+      userId: id
     });
     const accessToken = await encryptAuthToken({
-      role: account.role,
-      userId: account.id
+      role,
+      userId: id
     });
 
     res.cookie(AUTH_COOKIE_NAME, encryptedCookie, {
@@ -87,13 +83,8 @@ async function login(req, res, next) {
     return res.status(200).json({
       success: true,
       details: 'Login successful.',
-      redirectPath: getRedirectPath({ role: account.role }),
-      accessToken,
-      user: {
-        id: account.id,
-        username: account.username,
-        role: account.role
-      }
+      redirectPath: getRedirectPath({ role }),
+      accessToken
     });
   } catch (error) {
     return next(error);

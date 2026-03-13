@@ -51,11 +51,13 @@ async function getInterns(req, res, next) {
 
 async function getInternById(req, res, next) {
   try {
+    const { params } = req;
+    const { id } = params;
     const [intern, logs, supervisors, userAccount] = await Promise.all([
-      internModel.getById(req.params.id),
-      dailyLogModel.getByInternId(req.params.id),
+      internModel.getById(id),
+      dailyLogModel.getByInternId(id),
       supervisorModel.getAll(),
-      userModel.getByInternId(req.params.id)
+      userModel.getByInternId(id)
     ]);
 
     if (!intern) {
@@ -84,17 +86,19 @@ async function getInternById(req, res, next) {
 
 async function createIntern(req, res, next) {
   try {
-    const errors = req.validationErrors || await getInternValidationErrors(req.body);
+    const { body, validationErrors = [] } = req;
+    const { username, password } = body;
+    const errors = validationErrors.length ? validationErrors : await getInternValidationErrors(body);
 
-    if (!req.body.username || !String(req.body.username).trim()) {
+    if (!username || !String(username).trim()) {
       errors.push('Username is required.');
     }
 
-    if (!req.body.password || !String(req.body.password).trim()) {
+    if (!password || !String(password).trim()) {
       errors.push('Password is required.');
     }
 
-    if (req.body.username && await userModel.getByUsername(req.body.username)) {
+    if (username && await userModel.getByUsername(username)) {
       errors.push('Username is already in use.');
     }
 
@@ -107,10 +111,10 @@ async function createIntern(req, res, next) {
     }
 
     const result = await withTransaction(async () => {
-      const createdIntern = await internModel.create(req.body);
+      const createdIntern = await internModel.create(body);
       await userModel.create({
-        username: req.body.username,
-        password: req.body.password,
+        username,
+        password,
         role: 'intern',
         intern_id: createdIntern.lastInsertRowid
       });
@@ -130,7 +134,10 @@ async function createIntern(req, res, next) {
 
 async function updateIntern(req, res, next) {
   try {
-    const intern = await internModel.getById(req.params.id);
+    const { body, params, validationErrors = [] } = req;
+    const { id } = params;
+    const { username, password } = body;
+    const intern = await internModel.getById(id);
     if (!intern) {
       return res.status(404).json({
         success: false,
@@ -138,17 +145,17 @@ async function updateIntern(req, res, next) {
       });
     }
 
-    const errors = req.validationErrors || await getInternValidationErrors(req.body);
+    const errors = validationErrors.length ? validationErrors : await getInternValidationErrors(body);
     const [existingUser, usernameOwner] = await Promise.all([
-      userModel.getByInternId(req.params.id),
-      req.body.username ? userModel.getByUsername(req.body.username) : Promise.resolve(null)
+      userModel.getByInternId(id),
+      username ? userModel.getByUsername(username) : Promise.resolve(null)
     ]);
 
-    if (!req.body.username || !String(req.body.username).trim()) {
+    if (!username || !String(username).trim()) {
       errors.push('Username is required.');
     }
 
-    if (!req.body.password || !String(req.body.password).trim()) {
+    if (!password || !String(password).trim()) {
       errors.push('Password is required.');
     }
 
@@ -165,14 +172,14 @@ async function updateIntern(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await internModel.update(req.params.id, req.body);
+      await internModel.update(id, body);
 
       if (existingUser) {
         await userModel.update(existingUser.id, {
-          username: req.body.username,
-          password: req.body.password,
+          username,
+          password,
           role: 'intern',
-          intern_id: req.params.id
+          intern_id: id
         });
       }
     });
@@ -180,7 +187,7 @@ async function updateIntern(req, res, next) {
     return res.status(200).json({
       success: true,
       details: 'Intern updated successfully.',
-      internId: Number(req.params.id)
+      internId: Number(id)
     });
   } catch (error) {
     return next(error);
@@ -189,7 +196,9 @@ async function updateIntern(req, res, next) {
 
 async function deleteIntern(req, res, next) {
   try {
-    const intern = await internModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const intern = await internModel.getById(id);
     if (!intern) {
       return res.status(404).json({
         success: false,
@@ -198,14 +207,14 @@ async function deleteIntern(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await userModel.deleteByInternId(req.params.id);
-      await internModel.delete(req.params.id);
+      await userModel.deleteByInternId(id);
+      await internModel.delete(id);
     });
 
     return res.status(200).json({
       success: true,
       details: 'Intern deleted successfully.',
-      internId: Number(req.params.id)
+      internId: Number(id)
     });
   } catch (error) {
     return next(error);
@@ -225,10 +234,12 @@ async function getSupervisors(req, res, next) {
 
 async function getSupervisorById(req, res, next) {
   try {
+    const { params } = req;
+    const { id } = params;
     const [supervisor, supervisors, userAccount] = await Promise.all([
-      supervisorModel.getById(req.params.id),
+      supervisorModel.getById(id),
       supervisorModel.getAll(),
-      userModel.getBySupervisorId(req.params.id)
+      userModel.getBySupervisorId(id)
     ]);
 
     if (!supervisor) {
@@ -253,9 +264,11 @@ async function getSupervisorById(req, res, next) {
 
 async function createSupervisor(req, res, next) {
   try {
-    const errors = req.validationErrors || await buildSupervisorValidationErrors(req.body);
+    const { body, validationErrors = [] } = req;
+    const { username, password } = body;
+    const errors = validationErrors.length ? validationErrors : await buildSupervisorValidationErrors(body);
 
-    if (req.body.username && await userModel.getByUsername(req.body.username)) {
+    if (username && await userModel.getByUsername(username)) {
       errors.push('Username is already in use.');
     }
 
@@ -268,10 +281,10 @@ async function createSupervisor(req, res, next) {
     }
 
     const result = await withTransaction(async () => {
-      const createdSupervisor = await supervisorModel.create(req.body);
+      const createdSupervisor = await supervisorModel.create(body);
       await userModel.create({
-        username: req.body.username,
-        password: req.body.password,
+        username,
+        password,
         role: 'supervisor',
         supervisor_id: createdSupervisor.lastInsertRowid
       });
@@ -291,7 +304,10 @@ async function createSupervisor(req, res, next) {
 
 async function updateSupervisor(req, res, next) {
   try {
-    const supervisor = await supervisorModel.getById(req.params.id);
+    const { body, params, validationErrors = [] } = req;
+    const { id } = params;
+    const { username, password } = body;
+    const supervisor = await supervisorModel.getById(id);
     if (!supervisor) {
       return res.status(404).json({
         success: false,
@@ -299,10 +315,10 @@ async function updateSupervisor(req, res, next) {
       });
     }
 
-    const errors = req.validationErrors || await buildSupervisorValidationErrors(req.body);
+    const errors = validationErrors.length ? validationErrors : await buildSupervisorValidationErrors(body);
     const [existingUser, usernameOwner] = await Promise.all([
-      userModel.getBySupervisorId(req.params.id),
-      req.body.username ? userModel.getByUsername(req.body.username) : Promise.resolve(null)
+      userModel.getBySupervisorId(id),
+      username ? userModel.getByUsername(username) : Promise.resolve(null)
     ]);
 
     if (usernameOwner && (!existingUser || Number(usernameOwner.id) !== Number(existingUser.id))) {
@@ -318,14 +334,14 @@ async function updateSupervisor(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await supervisorModel.update(req.params.id, req.body);
+      await supervisorModel.update(id, body);
 
       if (existingUser) {
         await userModel.update(existingUser.id, {
-          username: req.body.username,
-          password: req.body.password,
+          username,
+          password,
           role: 'supervisor',
-          supervisor_id: req.params.id
+          supervisor_id: id
         });
       }
     });
@@ -333,7 +349,7 @@ async function updateSupervisor(req, res, next) {
     return res.status(200).json({
       success: true,
       details: 'Supervisor updated successfully.',
-      supervisorId: Number(req.params.id)
+      supervisorId: Number(id)
     });
   } catch (error) {
     return next(error);
@@ -342,7 +358,9 @@ async function updateSupervisor(req, res, next) {
 
 async function deleteSupervisor(req, res, next) {
   try {
-    const supervisor = await supervisorModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const supervisor = await supervisorModel.getById(id);
     if (!supervisor) {
       return res.status(404).json({
         success: false,
@@ -351,14 +369,14 @@ async function deleteSupervisor(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await userModel.deleteBySupervisorId(req.params.id);
-      await supervisorModel.delete(req.params.id);
+      await userModel.deleteBySupervisorId(id);
+      await supervisorModel.delete(id);
     });
 
     return res.status(200).json({
       success: true,
       details: 'Supervisor deleted successfully.',
-      supervisorId: Number(req.params.id)
+      supervisorId: Number(id)
     });
   } catch (error) {
     return next(error);

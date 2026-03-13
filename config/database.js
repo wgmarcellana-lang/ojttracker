@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const { hashPassword } = require('../utilities/passwordUtils');
 
 const dataDir = path.join(__dirname, '..', 'data', 'sqlite');
 const dbPath = path.join(dataDir, 'ojttracker.db');
@@ -230,7 +231,10 @@ const seedDatabase = async () => {
       await rawRun(`
         INSERT INTO users (username, password, role, intern_id, supervisor_id)
         VALUES (:username, :password, :role, :intern_id, :supervisor_id)
-      `, user);
+      `, {
+        ...user,
+        password: await hashPassword(user.password)
+      });
     }
   }
 };

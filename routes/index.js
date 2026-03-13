@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 router.get('/', (req, res) => {
+  const { user } = req;
   let redirectPath = '/auth/login';
 
-  if (req.user) {
-    if (req.user.role === 'intern') {
+  if (user) {
+    if (user.role === 'intern') {
       redirectPath = '/interns/dashboard';
-    } else if (req.user.role === 'supervisor') {
+    } else if (user.role === 'supervisor') {
       redirectPath = '/supervisors/dashboard';
     } else {
       redirectPath = '/admin/dashboard';

@@ -1,14 +1,15 @@
 const dailyLogModel = require('../model/dailyLogModel');
 const internModel = require('../model/internModel');
+const { getScopedInternId } = require('../utilities/controllerUtils');
 const reportUtils = require('../utilities/reportUtils');
 
 async function getReport(req, res, next) {
   try {
+    const { query, user } = req;
     const interns = await internModel.getAll();
-    const selectedInternId = req.user.role === 'intern'
-      ? Number(req.user.entityId)
-      : Number(req.query.internId || interns[0]?.id || 0);
-    const intern = interns.find((item) => Number(item.id) === selectedInternId) || await internModel.getById(selectedInternId);
+    const selectedInternId = getScopedInternId({ user, query, interns });
+    const intern = interns.find((item) => Number(item.id) === selectedInternId)
+      || await internModel.getById(selectedInternId);
     const logs = intern ? await dailyLogModel.getByInternId(intern.id) : [];
     const report = intern ? reportUtils.buildCompletionReport(intern, logs) : null;
 
@@ -25,9 +26,8 @@ async function getReport(req, res, next) {
 
 async function exportCsv(req, res, next) {
   try {
-    const internId = req.user.role === 'intern'
-      ? req.user.entityId
-      : Number(req.params.internId || req.query.internId || 0);
+    const { params, query, user } = req;
+    const internId = getScopedInternId({ user, query, params });
     const intern = await internModel.getById(internId);
 
     if (!intern) {

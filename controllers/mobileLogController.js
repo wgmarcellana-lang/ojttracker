@@ -3,35 +3,40 @@ const { calculateWorkedHours } = require('../utilities/hoursUtils');
 const { getDailyLogValidationErrors } = require('../validators/dailyLogValidator');
 
 const canMutateLog = (req, log) => {
-  if (!req.user) {
+  const { user } = req;
+
+  if (!user) {
     return false;
   }
 
-  if (req.user.role === 'admin') {
+  if (user.role === 'admin') {
     return true;
   }
 
-  return req.user.role === 'intern' && Number(req.user.entityId) === Number(log.intern_id);
+  return user.role === 'intern' && Number(user.entityId) === Number(log.intern_id);
 };
 
 const getTargetInternId = (req, fallbackInternId) => {
-  if (req.user.role === 'intern') {
-    return Number(req.user.entityId);
+  const { body, user } = req;
+
+  if (user.role === 'intern') {
+    return Number(user.entityId);
   }
 
-  return Number(req.body.intern_id || fallbackInternId || 0);
+  return Number(body.intern_id || fallbackInternId || 0);
 };
 
 const buildApiLogPayload = async (req, fallbackInternId) => {
+  const { body, params, validationErrors = [] } = req;
   const internId = getTargetInternId(req, fallbackInternId);
   const payload = {
-    ...req.body,
+    ...body,
     intern_id: internId,
-    break_hours: req.body.break_hours ?? 1
+    break_hours: body.break_hours ?? 1
   };
-  const errors = req.validationErrors || await getDailyLogValidationErrors(payload);
+  const errors = validationErrors.length ? validationErrors : await getDailyLogValidationErrors(payload);
 
-  if (await dailyLogModel.findByInternAndDate(internId, payload.date, fallbackInternId ? req.params.id : undefined)) {
+  if (await dailyLogModel.findByInternAndDate(internId, payload.date, fallbackInternId ? params.id : undefined)) {
     errors.push(fallbackInternId ? 'Another log already exists for this intern and date.' : 'An entry for this intern and date already exists.');
   }
 
@@ -50,8 +55,9 @@ const buildApiLogPayload = async (req, fallbackInternId) => {
 
 async function getLogs(req, res, next) {
   try {
-    const logs = req.user.role === 'intern'
-      ? await dailyLogModel.getByInternId(req.user.entityId)
+    const { user } = req;
+    const logs = user.role === 'intern'
+      ? await dailyLogModel.getByInternId(user.entityId)
       : await dailyLogModel.getAll();
 
     return res.status(200).json({
@@ -65,7 +71,9 @@ async function getLogs(req, res, next) {
 
 async function getLogById(req, res, next) {
   try {
-    const log = await dailyLogModel.getById(req.params.id);
+    const { params, user } = req;
+    const { id } = params;
+    const log = await dailyLogModel.getById(id);
 
     if (!log) {
       return res.status(404).json({
@@ -74,7 +82,7 @@ async function getLogById(req, res, next) {
       });
     }
 
-    if (req.user.role === 'intern' && Number(log.intern_id) !== Number(req.user.entityId)) {
+    if (user.role === 'intern' && Number(log.intern_id) !== Number(user.entityId)) {
       return res.status(403).json({
         success: false,
         details: 'You do not have permission to access this log.'
@@ -120,7 +128,9 @@ async function createLog(req, res, next) {
 
 async function updateLog(req, res, next) {
   try {
-    const existingLog = await dailyLogModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const existingLog = await dailyLogModel.getById(id);
 
     if (!existingLog) {
       return res.status(404).json({
@@ -146,7 +156,7 @@ async function updateLog(req, res, next) {
       });
     }
 
-    await dailyLogModel.update(req.params.id, {
+    await dailyLogModel.update(id, {
       ...payload,
       status: existingLog.status === 'approved' ? 'pending' : existingLog.status,
       supervisor_comment: existingLog.status === 'approved' ? '' : existingLog.supervisor_comment
@@ -155,7 +165,7 @@ async function updateLog(req, res, next) {
     return res.status(200).json({
       success: true,
       details: 'Daily log updated successfully.',
-      logId: Number(req.params.id)
+      logId: Number(id)
     });
   } catch (error) {
     return next(error);
@@ -164,7 +174,9 @@ async function updateLog(req, res, next) {
 
 async function deleteLog(req, res, next) {
   try {
-    const existingLog = await dailyLogModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const existingLog = await dailyLogModel.getById(id);
 
     if (!existingLog) {
       return res.status(404).json({
@@ -180,12 +192,12 @@ async function deleteLog(req, res, next) {
       });
     }
 
-    await dailyLogModel.delete(req.params.id);
+    await dailyLogModel.delete(id);
 
     return res.status(200).json({
       success: true,
       details: 'Daily log deleted successfully.',
-      logId: Number(req.params.id)
+      logId: Number(id)
     });
   } catch (error) {
     return next(error);

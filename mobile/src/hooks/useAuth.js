@@ -1,5 +1,21 @@
 import { useState } from 'react';
-import { loginWithCredentials } from '../services';
+import { fetchSession, loginWithCredentials } from '../services';
+
+const inferRoleFromRedirectPath = (redirectPath = '') => {
+  if (redirectPath.startsWith('/admin')) {
+    return 'admin';
+  }
+
+  if (redirectPath.startsWith('/supervisors')) {
+    return 'supervisor';
+  }
+
+  if (redirectPath.startsWith('/interns')) {
+    return 'intern';
+  }
+
+  return '';
+};
 
 export function useAuth() {
   const [token, setToken] = useState('');
@@ -12,8 +28,16 @@ export function useAuth() {
 
   const login = async () => {
     const result = await loginWithCredentials(loginForm);
-    setToken(result.accessToken || '');
-    setUser(result.user);
+    const nextToken = result.accessToken || '';
+    const session = await fetchSession(nextToken);
+    const redirectPath = result.redirectPath || session.redirectPath || '';
+    const role = inferRoleFromRedirectPath(redirectPath);
+
+    setToken(nextToken);
+    setUser(session.authenticated && role ? {
+      username: String(loginForm.username || '').trim(),
+      role,
+    } : null);
     return result;
   };
 

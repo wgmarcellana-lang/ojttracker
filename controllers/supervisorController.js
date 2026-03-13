@@ -1,11 +1,18 @@
 const dailyLogModel = require('../model/dailyLogModel');
 const supervisorModel = require('../model/supervisorModel');
+const {
+  buildLogStatusStats,
+  getScopedSupervisorId
+} = require('../utilities/controllerUtils');
 
 async function showDashboard(req, res, next) {
   try {
-    const supervisorId = req.user.role === 'supervisor'
-      ? req.user.entityId
-      : Number(req.query.id || 1);
+    const { query, user } = req;
+    const supervisorId = getScopedSupervisorId({
+      user,
+      query,
+      fallbackSupervisorId: 1
+    });
 
     const [supervisor, interns, logs] = await Promise.all([
       supervisorModel.getById(supervisorId),
@@ -28,11 +35,7 @@ async function showDashboard(req, res, next) {
       supervisor,
       interns,
       pendingLogs,
-      stats: {
-        pending: pendingLogs.length,
-        approved: logs.filter((log) => log.status === 'approved').length,
-        rejected: logs.filter((log) => log.status === 'rejected').length
-      }
+      stats: buildLogStatusStats(logs)
     });
   } catch (error) {
     return next(error);
@@ -41,9 +44,12 @@ async function showDashboard(req, res, next) {
 
 async function reviewLogs(req, res, next) {
   try {
-    const supervisorId = req.user.role === 'supervisor'
-      ? req.user.entityId
-      : Number(req.query.id || 1);
+    const { query, user } = req;
+    const supervisorId = getScopedSupervisorId({
+      user,
+      query,
+      fallbackSupervisorId: 1
+    });
     const logs = await dailyLogModel.getBySupervisor(supervisorId);
 
     return res.render('supervisor/review-logs', {
@@ -57,7 +63,10 @@ async function reviewLogs(req, res, next) {
 
 async function approveLog(req, res, next) {
   try {
-    const log = await dailyLogModel.getById(req.params.logId);
+    const { body, params } = req;
+    const { logId } = params;
+    const { supervisor_comment: supervisorComment } = body;
+    const log = await dailyLogModel.getById(logId);
     if (!log) {
       return res.status(404).json({
         success: false,
@@ -65,12 +74,12 @@ async function approveLog(req, res, next) {
       });
     }
 
-    await dailyLogModel.updateStatus(req.params.logId, 'approved', req.body.supervisor_comment || 'Approved by supervisor.');
+    await dailyLogModel.updateStatus(logId, 'approved', supervisorComment || 'Approved by supervisor.');
     return res.status(200).json({
       success: true,
       details: 'Log approved successfully.',
       redirectPath: '/supervisors/review-logs',
-      logId: Number(req.params.logId)
+      logId: Number(logId)
     });
   } catch (error) {
     return next(error);
@@ -79,7 +88,10 @@ async function approveLog(req, res, next) {
 
 async function rejectLog(req, res, next) {
   try {
-    const log = await dailyLogModel.getById(req.params.logId);
+    const { body, params } = req;
+    const { logId } = params;
+    const { supervisor_comment: supervisorComment } = body;
+    const log = await dailyLogModel.getById(logId);
     if (!log) {
       return res.status(404).json({
         success: false,
@@ -87,12 +99,12 @@ async function rejectLog(req, res, next) {
       });
     }
 
-    await dailyLogModel.updateStatus(req.params.logId, 'rejected', req.body.supervisor_comment || 'Please update the entry details and resubmit.');
+    await dailyLogModel.updateStatus(logId, 'rejected', supervisorComment || 'Please update the entry details and resubmit.');
     return res.status(200).json({
       success: true,
       details: 'Log rejected successfully.',
       redirectPath: '/supervisors/review-logs',
-      logId: Number(req.params.logId)
+      logId: Number(logId)
     });
   } catch (error) {
     return next(error);

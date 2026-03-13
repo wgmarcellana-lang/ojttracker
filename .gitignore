@@ -1,4 +1,5 @@
 node_modules/
+.expo/
 
 # Local environment secrets
 config/.env

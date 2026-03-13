@@ -1,14 +1,15 @@
 const dailyLogModel = require('../model/dailyLogModel');
 const internModel = require('../model/internModel');
+const { getScopedInternId } = require('../utilities/controllerUtils');
 const reportUtils = require('../utilities/reportUtils');
 
 async function showReports(req, res, next) {
   try {
+    const { query, user } = req;
     const interns = await internModel.getAll();
-    const selectedInternId = req.user && req.user.role === 'intern'
-      ? Number(req.user.entityId)
-      : Number(req.query.internId || interns[0]?.id || 0);
-    const intern = interns.find((item) => Number(item.id) === selectedInternId) || await internModel.getById(selectedInternId);
+    const selectedInternId = getScopedInternId({ user, query, interns });
+    const intern = interns.find((item) => Number(item.id) === selectedInternId)
+      || await internModel.getById(selectedInternId);
     const logs = intern ? await dailyLogModel.getByInternId(intern.id) : [];
     const report = intern ? reportUtils.buildCompletionReport(intern, logs) : null;
 
@@ -26,9 +27,8 @@ async function showReports(req, res, next) {
 
 async function exportCsv(req, res, next) {
   try {
-    const internId = req.user && req.user.role === 'intern'
-      ? req.user.entityId
-      : (req.query.internId || 1);
+    const { query, user } = req;
+    const internId = getScopedInternId({ user, query, fallbackInternId: 1 });
     const intern = await internModel.getById(internId);
 
     if (!intern) {
@@ -48,10 +48,18 @@ async function exportCsv(req, res, next) {
 
 async function exportPdf(req, res, next) {
   try {
+    const { query } = req;
+    const interns = await internModel.getAll();
+    const selectedInternId = getScopedInternId({
+      query,
+      interns,
+      fallbackInternId: 1
+    });
+
     return res.status(501).render('reports/index', {
       pageTitle: 'Reports',
-      interns: await internModel.getAll(),
-      selectedInternId: Number(req.query.internId || 1),
+      interns,
+      selectedInternId,
       report: null,
       pdfMessage: 'PDF export is not available at the moment.'
     });

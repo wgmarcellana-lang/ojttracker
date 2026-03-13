@@ -1,10 +1,9 @@
 const crypto = require('crypto');
+const { hashSha256, isSha256Hash } = require('./encryptionUtils');
 
 const HASH_PREFIX = 'pbkdf2';
-const ITERATIONS = 310000;
 const KEY_LENGTH = 32;
 const DIGEST = 'sha256';
-const SALT_LENGTH = 16;
 
 const pbkdf2Async = (password, salt, iterations, keyLength, digest) => new Promise((resolve, reject) => {
   crypto.pbkdf2(password, salt, iterations, keyLength, digest, (error, derivedKey) => {
@@ -28,26 +27,19 @@ const timingSafeEqual = (left, right) => {
   return crypto.timingSafeEqual(leftBuffer, rightBuffer);
 };
 
-const isPasswordHash = (value = '') => String(value).startsWith(`${HASH_PREFIX}$`);
-
-const hashPassword = async (password) => {
-  const normalizedPassword = String(password);
-  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
-  const derivedKey = await pbkdf2Async(normalizedPassword, salt, ITERATIONS, KEY_LENGTH, DIGEST);
-
-  return [
-    HASH_PREFIX,
-    ITERATIONS,
-    salt,
-    derivedKey.toString('hex')
-  ].join('$');
-};
+const isLegacyPasswordHash = (value = '') => String(value).startsWith(`${HASH_PREFIX}$`);
+const hashPassword = async (password) => hashSha256(password);
+const isPasswordHash = (value = '') => isSha256Hash(value);
 
 const verifyPassword = async (password, storedValue) => {
   const normalizedPassword = String(password);
   const normalizedStoredValue = String(storedValue || '');
 
-  if (!isPasswordHash(normalizedStoredValue)) {
+  if (isSha256Hash(normalizedStoredValue)) {
+    return hashSha256(normalizedPassword) === normalizedStoredValue;
+  }
+
+  if (!isLegacyPasswordHash(normalizedStoredValue)) {
     return normalizedStoredValue === normalizedPassword;
   }
 

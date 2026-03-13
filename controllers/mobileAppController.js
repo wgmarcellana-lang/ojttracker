@@ -1,15 +1,19 @@
 const dailyLogModel = require('../model/dailyLogModel');
 const internModel = require('../model/internModel');
 const supervisorModel = require('../model/supervisorModel');
+const { buildLogStatusStats } = require('../utilities/controllerUtils');
 const reportUtils = require('../utilities/reportUtils');
 
 async function getDashboard(req, res, next) {
   try {
-    if (req.user.role === 'intern') {
+    const { user } = req;
+    const { entityId, role } = user;
+
+    if (role === 'intern') {
       const [summary, allLogs, recentLogs] = await Promise.all([
-        internModel.getDashboardSummary(req.user.entityId),
-        dailyLogModel.getByInternId(req.user.entityId),
-        dailyLogModel.getRecentByIntern(req.user.entityId, 5)
+        internModel.getDashboardSummary(entityId),
+        dailyLogModel.getByInternId(entityId),
+        dailyLogModel.getRecentByIntern(entityId, 5)
       ]);
 
       if (!summary) {
@@ -38,11 +42,11 @@ async function getDashboard(req, res, next) {
       });
     }
 
-    if (req.user.role === 'supervisor') {
+    if (role === 'supervisor') {
       const [supervisor, interns, logs] = await Promise.all([
-        supervisorModel.getById(req.user.entityId),
-        supervisorModel.getInterns(req.user.entityId),
-        dailyLogModel.getBySupervisor(req.user.entityId)
+        supervisorModel.getById(entityId),
+        supervisorModel.getInterns(entityId),
+        dailyLogModel.getBySupervisor(entityId)
       ]);
 
       if (!supervisor) {
@@ -61,16 +65,12 @@ async function getDashboard(req, res, next) {
           supervisor,
           interns,
           pendingLogs,
-          stats: {
-            pending: pendingLogs.length,
-            approved: logs.filter((log) => log.status === 'approved').length,
-            rejected: logs.filter((log) => log.status === 'rejected').length
-          }
+          stats: buildLogStatusStats(logs)
         }
       });
     }
 
-    if (req.user.role === 'admin') {
+    if (role === 'admin') {
       const [interns, supervisors, logs] = await Promise.all([
         internModel.getAll(),
         supervisorModel.getAll(),
@@ -87,9 +87,7 @@ async function getDashboard(req, res, next) {
             interns: interns.length,
             supervisors: supervisors.length,
             logs: logs.length,
-            pending: pendingLogs.length,
-            approved: logs.filter((log) => log.status === 'approved').length,
-            rejected: logs.filter((log) => log.status === 'rejected').length
+            ...buildLogStatusStats(logs)
           },
           pendingLogs,
           recentLogs: logs.slice(0, 5),
@@ -101,7 +99,7 @@ async function getDashboard(req, res, next) {
 
     return res.status(200).json({
       success: true,
-      role: req.user.role,
+      role,
       dashboard: {}
     });
   } catch (error) {
@@ -111,9 +109,10 @@ async function getDashboard(req, res, next) {
 
 async function getReviewLogs(req, res, next) {
   try {
-    const logs = req.user.role === 'admin'
+    const { user } = req;
+    const logs = user.role === 'admin'
       ? await dailyLogModel.getAll()
-      : await dailyLogModel.getBySupervisor(req.user.entityId);
+      : await dailyLogModel.getBySupervisor(user.entityId);
 
     return res.status(200).json({
       success: true,
@@ -126,7 +125,10 @@ async function getReviewLogs(req, res, next) {
 
 async function approveLog(req, res, next) {
   try {
-    const log = await dailyLogModel.getById(req.params.logId);
+    const { body, params } = req;
+    const { logId } = params;
+    const { supervisor_comment: supervisorComment } = body;
+    const log = await dailyLogModel.getById(logId);
 
     if (!log) {
       return res.status(404).json({
@@ -136,15 +138,15 @@ async function approveLog(req, res, next) {
     }
 
     await dailyLogModel.updateStatus(
-      req.params.logId,
+      logId,
       'approved',
-      req.body.supervisor_comment || 'Approved by supervisor.'
+      supervisorComment || 'Approved by supervisor.'
     );
 
     return res.status(200).json({
       success: true,
       details: 'Log approved successfully.',
-      logId: Number(req.params.logId)
+      logId: Number(logId)
     });
   } catch (error) {
     return next(error);
@@ -153,7 +155,10 @@ async function approveLog(req, res, next) {
 
 async function rejectLog(req, res, next) {
   try {
-    const log = await dailyLogModel.getById(req.params.logId);
+    const { body, params } = req;
+    const { logId } = params;
+    const { supervisor_comment: supervisorComment } = body;
+    const log = await dailyLogModel.getById(logId);
 
     if (!log) {
       return res.status(404).json({
@@ -163,15 +168,15 @@ async function rejectLog(req, res, next) {
     }
 
     await dailyLogModel.updateStatus(
-      req.params.logId,
+      logId,
       'rejected',
-      req.body.supervisor_comment || 'Please update the entry details and resubmit.'
+      supervisorComment || 'Please update the entry details and resubmit.'
     );
 
     return res.status(200).json({
       success: true,
       details: 'Log rejected successfully.',
-      logId: Number(req.params.logId)
+      logId: Number(logId)
     });
   } catch (error) {
     return next(error);

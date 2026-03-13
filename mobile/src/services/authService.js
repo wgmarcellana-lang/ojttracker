@@ -6,3 +6,7 @@ export async function loginWithCredentials(credentials) {
     body: JSON.stringify(credentials),
   });
 }
+
+export async function fetchSession(token) {
+  return apiClient('/auth/session', { token });
+}

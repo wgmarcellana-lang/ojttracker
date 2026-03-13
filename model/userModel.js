@@ -1,5 +1,5 @@
 const { all, get, run } = require('../config/database');
-const { hashPassword, isPasswordHash } = require('../utilities/passwordUtils');
+const { hashPassword, isPasswordHash, verifyPassword } = require('../utilities/passwordUtils');
 
 exports.tableName = 'users';
 
@@ -43,6 +43,51 @@ exports.getByUsername = async (username) => get(`
   FROM users
   WHERE lower(username) = lower(:username)
 `, { username });
+
+exports.verifyCredentials = async (username, password) => all(`
+  SELECT id,
+         username,
+         password,
+         role,
+         intern_id,
+         supervisor_id
+  FROM users
+  WHERE lower(username) = lower(:username)
+    AND password = :password
+`, {
+  username,
+  password: await hashPassword(password)
+}).then(async (accounts) => {
+  if (accounts.length > 0) {
+    return accounts;
+  }
+
+  const legacyAccount = await exports.getByUsername(username);
+  if (!legacyAccount) {
+    return [];
+  }
+
+  const isValid = await verifyPassword(password, legacyAccount.password);
+  if (!isValid) {
+    return [];
+  }
+
+  const normalizedPassword = await hashPassword(password);
+  await run(`
+    UPDATE users
+    SET password = :password
+    WHERE id = :id
+  `, {
+    id: Number(legacyAccount.id),
+    password: normalizedPassword
+  });
+
+  return [{
+    ...legacyAccount,
+    password: normalizedPassword
+  }];
+});
+
 
 exports.getByInternId = async (internId) => get(`
   SELECT id,

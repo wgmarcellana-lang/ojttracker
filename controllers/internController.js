@@ -9,6 +9,7 @@ const {
   calculateRemainingHours,
   sumHours
 } = require('../utilities/hoursUtils');
+const { getScopedInternId } = require('../utilities/controllerUtils');
 const { getInternValidationErrors } = require('../validators/internValidator');
 
 const buildFormState = (payload = {}) => ({
@@ -22,16 +23,21 @@ const buildFormState = (payload = {}) => ({
   password: payload.password || ''
 });
 
-const canAccessIntern = (req, internId) => (
-  req.user.role === 'admin' ||
-  (req.user.role === 'intern' && Number(req.user.entityId) === Number(internId))
-);
+const canAccessIntern = (req, internId) => {
+  const { user } = req;
+
+  return user.role === 'admin'
+    || (user.role === 'intern' && Number(user.entityId) === Number(internId));
+};
 
 async function showDashboard(req, res, next) {
   try {
-    const targetInternId = req.user.role === 'intern'
-      ? req.user.entityId
-      : Number(req.query.id || 1);
+    const { query, user } = req;
+    const targetInternId = getScopedInternId({
+      user,
+      query: { internId: query.id },
+      fallbackInternId: 1
+    });
 
     const [summary, allLogs, recentLogs] = await Promise.all([
       internModel.getDashboardSummary(targetInternId),
@@ -87,7 +93,10 @@ async function getInterns(req, res, next) {
 
 async function getInternById(req, res, next) {
   try {
-    if (!canAccessIntern(req, req.params.id)) {
+    const { params } = req;
+    const { id } = params;
+
+    if (!canAccessIntern(req, id)) {
       return res.status(403).json({
         success: false,
         details: 'You do not have permission to access this intern.',
@@ -96,8 +105,8 @@ async function getInternById(req, res, next) {
     }
 
     const [intern, logs] = await Promise.all([
-      internModel.getById(req.params.id),
-      dailyLogModel.getByInternId(req.params.id)
+      internModel.getById(id),
+      dailyLogModel.getByInternId(id)
     ]);
     if (!intern) {
       return res.status(404).render('error', {
@@ -146,17 +155,19 @@ async function showCreateForm(req, res, next) {
 
 async function createIntern(req, res) {
   try {
-    const errors = req.validationErrors || await getInternValidationErrors(req.body);
+    const { body, validationErrors = [] } = req;
+    const { username, password } = body;
+    const errors = validationErrors.length ? validationErrors : await getInternValidationErrors(body);
 
-    if (!req.body.username || !String(req.body.username).trim()) {
+    if (!username || !String(username).trim()) {
       errors.push('Username is required.');
     }
 
-    if (!req.body.password || !String(req.body.password).trim()) {
+    if (!password || !String(password).trim()) {
       errors.push('Password is required.');
     }
 
-    if (req.body.username && await userModel.getByUsername(req.body.username)) {
+    if (username && await userModel.getByUsername(username)) {
       errors.push('Username is already in use.');
     }
 
@@ -165,15 +176,15 @@ async function createIntern(req, res) {
         success: false,
         details: 'Validation failed.',
         errors,
-        formData: buildFormState(req.body)
+        formData: buildFormState(body)
       });
     }
 
     const result = await withTransaction(async () => {
-      const createdIntern = await internModel.create(req.body);
+      const createdIntern = await internModel.create(body);
       await userModel.create({
-        username: req.body.username,
-        password: req.body.password,
+        username,
+        password,
         role: 'intern',
         intern_id: createdIntern.lastInsertRowid
       });
@@ -199,7 +210,9 @@ async function createIntern(req, res) {
 
 async function showEditForm(req, res, next) {
   try {
-    const intern = await internModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const intern = await internModel.getById(id);
 
     if (!intern) {
       return res.status(404).render('error', {
@@ -232,7 +245,10 @@ async function showEditForm(req, res, next) {
 
 async function updateIntern(req, res) {
   try {
-    const intern = await internModel.getById(req.params.id);
+    const { body, params, validationErrors = [] } = req;
+    const { id } = params;
+    const { username, password } = body;
+    const intern = await internModel.getById(id);
     if (!intern) {
       return res.status(404).json({
         success: false,
@@ -240,17 +256,17 @@ async function updateIntern(req, res) {
       });
     }
 
-    const errors = req.validationErrors || await getInternValidationErrors(req.body);
+    const errors = validationErrors.length ? validationErrors : await getInternValidationErrors(body);
     const [existingUser, usernameOwner] = await Promise.all([
-      userModel.getByInternId(req.params.id),
-      req.body.username ? userModel.getByUsername(req.body.username) : Promise.resolve(null)
+      userModel.getByInternId(id),
+      username ? userModel.getByUsername(username) : Promise.resolve(null)
     ]);
 
-    if (!req.body.username || !String(req.body.username).trim()) {
+    if (!username || !String(username).trim()) {
       errors.push('Username is required.');
     }
 
-    if (!req.body.password || !String(req.body.password).trim()) {
+    if (!password || !String(password).trim()) {
       errors.push('Password is required.');
     }
 
@@ -263,19 +279,19 @@ async function updateIntern(req, res) {
         success: false,
         details: 'Validation failed.',
         errors,
-        formData: buildFormState(req.body)
+        formData: buildFormState(body)
       });
     }
 
     await withTransaction(async () => {
-      await internModel.update(req.params.id, req.body);
+      await internModel.update(id, body);
 
       if (existingUser) {
         await userModel.update(existingUser.id, {
-          username: req.body.username,
-          password: req.body.password,
+          username,
+          password,
           role: 'intern',
-          intern_id: req.params.id
+          intern_id: id
         });
       }
     });
@@ -283,8 +299,8 @@ async function updateIntern(req, res) {
     return res.status(200).json({
       success: true,
       details: 'Intern updated successfully.',
-      redirectPath: `/interns/${req.params.id}`,
-      internId: Number(req.params.id)
+      redirectPath: `/interns/${id}`,
+      internId: Number(id)
     });
   } catch (error) {
     return res.status(400).json({
@@ -298,7 +314,9 @@ async function updateIntern(req, res) {
 
 async function deleteIntern(req, res, next) {
   try {
-    const intern = await internModel.getById(req.params.id);
+    const { params } = req;
+    const { id } = params;
+    const intern = await internModel.getById(id);
     if (!intern) {
       return res.status(404).json({
         success: false,
@@ -307,15 +325,15 @@ async function deleteIntern(req, res, next) {
     }
 
     await withTransaction(async () => {
-      await userModel.deleteByInternId(req.params.id);
-      await internModel.delete(req.params.id);
+      await userModel.deleteByInternId(id);
+      await internModel.delete(id);
     });
 
     return res.status(200).json({
       success: true,
       details: 'Intern deleted successfully.',
       redirectPath: '/interns',
-      internId: Number(req.params.id)
+      internId: Number(id)
     });
   } catch (error) {
     return next(error);
